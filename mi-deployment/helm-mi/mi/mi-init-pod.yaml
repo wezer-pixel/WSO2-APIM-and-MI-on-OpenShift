@@ -1,0 +1,28 @@
+# mi-init-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mi-init-pod
+  namespace: jerry-juma-dev
+spec:
+  containers:
+  - name: init
+    image: busybox
+    command: ["sh", "-c", "mkdir -p /carbonapps /conf /security && sleep 3600"]
+    volumeMounts:
+    - name: carbonapps
+      mountPath: /carbonapps
+    - name: conf
+      mountPath: /conf
+    - name: security
+      mountPath: /security
+  volumes:
+  - name: carbonapps
+    persistentVolumeClaim:
+      claimName: mi-carbonapps-pvc
+  - name: conf
+    persistentVolumeClaim:
+      claimName: mi-conf-pvc
+  - name: security
+    persistentVolumeClaim:
+      claimName: mi-security-pvc

@@ -1,0 +1,156 @@
+# -- Container registry (When running on a local Kubernetes cluster using local image, make this empty)
+containerRegistry: "wso2"
+
+wso2:
+  subscription:
+    # -- WSO2 subscription username
+    username: ""
+    # -- WSO2 subscription password
+    password: ""
+  ingress:
+    # -- Enable Ingress for MI
+    enabled: true
+    # -- Ingress class name
+    ingressClassName: "nginx"
+    # -- (list) Ingress annotations
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    # -- K8s TLS secret for configured hostname
+    tlsSecret: ""
+    ratelimit:
+      # -- Ingress rate limit
+      enabled: false
+      # -- Ingress ratelimit zone name
+      zoneName: ""
+      # -- Ingress ratelimit burst limit
+      burstLimit: ""
+      # -- Enable Ingress for metrics
+    metrics:
+      annotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  
+ # Integration Control Plane (ICP) product configurations
+  config:
+    miUserstore:
+      # -- The user name for signing in to the Micro Integrator runtimes
+      username: "admin"
+      # -- The user password for signing in to the Micro Integrator runtimes.
+      password: "admin"
+    userstore:
+      file:
+        # -- Enable/Disable file based userstore
+        enabled: true  
+    secureVault:
+      # -- Enable/Disable secure vault
+      enabled: false
+    keyStore:
+      #  -- The keystore file name
+      fileName: "dashboard.jks"
+      # -- The keystore alias
+      alias: "wso2carbon"
+      # -- The keystore password
+      password: "wso2carbon"
+      # -- The keystore key password
+      keyPassword: "wso2carbon"
+    trustStore:
+      # -- The truststore file name
+      fileName: "client-trustore.jks"
+      # -- The truststore password
+      password: "wso2carbon"
+    # -- Number of threads used by the executor pool to handle incoming requests from Micro Integrator runtimes
+    heartbeatPoolSize: 15
+    # -- ICP server port
+    serverPort: 9743
+  deployment:
+    securityContext:
+      # -- Enable/Disable AppArmor (https://kubernetes.io/docs/tutorials/security/apparmor/)
+      apparmor: false
+      # -- Enable/Disable seccomp profile (https://kubernetes.io/docs/tutorials/security/seccomp/)
+      seccompProfile: false
+      # -- The UID to run the entrypoint of the container process
+      runAsUser: "10802"
+    # -- Hostname of the Micro Integrator deployment
+    hostname: "icp.wso2.com"
+    # -- Build version of the Micro Integrator
+    BuildVersion: "1.0.0"
+    # -- K8s secret name which contains JKS files
+    JKSSecretName: ""
+    # -- imagePullSecrets for private docker registry
+    imagePullSecrets: ""
+    image:
+      # -- Container image repository name
+      repository: "wso2-integration-control-plane"
+      # -- Container image digest
+      digest: ""
+      # -- Container image tag
+      tag: "1.0.0"
+      # -- Container image pull policy. Refer (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
+      pullPolicy: IfNotPresent
+
+    # -- Kubernetes Probes (https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+    probes:
+      # -- Startup probe executed prior to Liveness Probe taking over
+      startup:
+        # -- Number of seconds after the container has started before startup probes are initiated
+        initialDelaySeconds: 15
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 3
+        # -- Number of attempts
+        failureThreshold: 40
+      # -- Indicates whether the container is running
+      liveness:
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 10
+        # -- Indicates whether the container is ready to service requests
+      readiness:
+        # -- Number of seconds after the container has started before readiness probes are initiated
+        initialDelaySeconds: 60
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 1
+
+    # -- Number of deployment replicas
+    replicas: 1
+    # HPA configurations
+    # -- Min replica count for HPA (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    minReplicas: 1
+    # -- Max replica count for HPA (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    maxReplicas: 2
+    # -- Average CPU utilization percentage for HPA
+    cpuUtilizationPercentage: 75
+    # -- Average memory utilization percentage for HPA
+    memoryUtilizationPercentage: 75
+    # -- Pod disruption budget configurations (https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
+    minAvailable: 1
+
+    strategy:
+      rollingUpdate:
+        # -- The maximum number of pods that can be scheduled above the desired number of pods.
+        maxSurge: 1
+        # -- The maximum number of pods that can be unavailable during the update.
+        maxUnavailable: 0
+
+    # These are the minimum resource recommendations for running WSO2 Micro Integrator
+    resources:
+      requests:
+        # -- The minimum amount of memory that should be allocated for a Pod
+        memory: "512Mi"
+        # -- The minimum amount of CPU that should be allocated for a Pod
+        cpu: "500m"
+      limits:
+        # -- The maximum amount of memory that should be allocated for a Pod
+        memory: "1Gi"
+        # -- The maximum amount of CPU that should be allocated for a Pod
+        cpu: "1000m"
+
+      # JVM settings
+      # These are the resource allocation configurations associated with the JVM
+      jvm:
+        memory:
+          # -- The minimum amount of memory that should be allocated for the JVM
+          xms: "512m"
+          # -- The maximum amount of memory that should be allocated for the JVM
+          xmx: "1024m"
+
+    # -- (list) Environment variables for the Micro integrator deployment
+    envs:
+    # wso2_oh_sample_baseUrl: "http://localhost:8290/services/odata"

@@ -1,0 +1,260 @@
+# -- Kubernetes cluster provider. Supported values: azure, aws
+provider: ""
+# -- Container registry
+containerRegistry: "wso2"
+# AWS service configurations
+aws:
+  # -- AWS IAM serivce account name
+  serviceAccountName: ""
+  # -- AWS region
+  region: ""
+  # AWS Secret Manager configurations
+  secretManager:
+    # -- AWS Secret Manager secret provider class name
+    secretProviderClass: ""
+    secretIdentifiers:
+      internalKeystorePassword:
+        # -- Secret name for internal keystore password
+        secretName: ""
+        # -- Secret key for internal keystore password
+        secretKey: ""
+# Azure service configurations
+azure:
+  keyVault:
+    # -- Name of the target Azure Key Vault instance
+    name: ""
+    # -- Azure Secret Manager secret provider class name
+    secretProviderClass: ""
+    secretIdentifiers:
+      # -- Secret name for internal keystore password
+      internalKeystorePassword: ""
+    activeDirectory:
+      # -- Service Principal created for transacting with the target Azure Key Vault
+      # For advanced details refer to official documentation (https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/docs/service-principal-mode.md)
+      servicePrincipal:
+        # -- Azure AD application name for fetching secrets via CSI secret store driver
+        appId: ""
+        # -- Client secret of Azure AD application client
+        clientSecret: ""
+      # -- Azure Active Directory tenant ID of the target Key Vault
+      tenantId: ""
+    resourceManager:
+      # -- Subscription ID of the target Azure Key Vault
+      subscriptionId: ""
+      # -- Name of the Azure Resource Group to which the target Azure Key Vault belongs
+      resourceGroup: ""
+# GCP service configurations
+gcp:
+  # GCP Secret Manager configurations
+  secretManager:
+    # -- GCP Secret Manager secret provider class name
+    secretProviderClass: ""
+    # -- K8s secret name which contains the JSON keyfile for the service account used to access the GCP Secret Manager
+    serviceAccountKeySecret: ""
+    secretIdentifiers:
+      # -- Secret name for internal keystore password. Expected format is `projects/<PROJECT_ID>/secrets/<SECRET_NAME>/versions/<VERSION>`
+      internalKeystorePassword: ""
+wso2:
+  ingress:
+    # -- Enable Ingress for ICP
+    enabled: true
+    # -- Ingress class name
+    ingressClassName: "nginx"
+    # -- (list) Ingress annotations
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    # -- K8s TLS secret for configured hostname
+    tlsSecret: ""
+    ratelimit:
+      # -- Ingress rate limit
+      enabled: false
+      # -- Ingress ratelimit zone name
+      zoneName: ""
+      # -- Ingress ratelimit burst limit
+      burstLimit: ""
+  deployment:
+    securityContext:
+      # -- Enable/Disable AppArmor (https://kubernetes.io/docs/tutorials/security/apparmor/)
+      apparmor: false
+      # -- Enable/Disable seccomp profile (https://kubernetes.io/docs/tutorials/security/seccomp/)
+      seccompProfile:
+        # -- Enable/Disable seccomp profile
+        enabled: false
+        # -- Seccomp profile type
+        type: RuntimeDefault
+      enableRunAsUser: true
+      # -- The UID to run the entrypoint of the container process
+      runAsUser: "802"
+      seLinux:
+        enabled: false
+        level: "s0:c26,c0"
+    # -- Hostname of the ICP deployment
+    hostname: "icp.apps.rm2.thpm.p1.openshiftapps.com"
+    # -- Build version of the ICP
+    BuildVersion: "1.0.0"
+    # -- K8s secret name which contains JKS files
+    JKSSecretName: ""
+    # -- Image pull secrets for pulling the container image from a private registry
+    imagePullSecrets: ""
+    image:
+      # -- Container image repository name
+      repository: "wso2-integration-control-plane"
+      tag: "1.0.0"
+      # -- Container image digest
+      digest: ""
+      # -- Container image pull policy. Refer (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
+      pullPolicy: Always
+
+    # -- Kubernetes Probes (https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+    probes:
+      # -- Startup probe executed prior to Liveness Probe taking over
+      startup:
+        # -- Number of seconds after the container has started before startup probes are initiated
+        initialDelaySeconds: 5
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 3
+        # -- Number of attempts
+        failureThreshold: 40
+      # -- Indicates whether the container is running
+      liveness:
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 10
+        # -- Indicates whether the container is ready to service requests
+      readiness:
+        # -- Number of seconds after the container has started before readiness probes are initiated
+        initialDelaySeconds: 60
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 1
+
+    # -- Number of deployment replicas
+    replicas: 1
+    # HPA configurations
+    # -- Min replica count for HPA (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    minReplicas: 1
+    # -- Max replica count for HPA (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    maxReplicas: 2
+    # -- Average CPU utilization percentage for HPA
+    cpuUtilizationPercentage: 75
+    # -- Average memory utilization percentage for HPA
+    memoryUtilizationPercentage: 75
+    # -- Pod disruption budget configurations (https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
+    minAvailable: 1
+
+    strategy:
+      rollingUpdate:
+        # -- The maximum number of pods that can be scheduled above the desired number of pods.
+        maxSurge: 1
+        # -- The maximum number of pods that can be unavailable during the update.
+        maxUnavailable: 0
+
+    # These are the minimum resource recommendations for running WSO2 Micro Integrator
+    resources:
+      requests:
+        # -- The minimum amount of memory that should be allocated for a Pod
+        memory: "512Mi"
+        # -- The minimum amount of CPU that should be allocated for a Pod
+        cpu: "500m"
+      limits:
+        # -- The maximum amount of memory that should be allocated for a Pod
+        memory: "1Gi"
+        # -- The maximum amount of CPU that should be allocated for a Pod
+        cpu: "1000m"
+
+      # JVM settings
+      # These are the resource allocation configurations associated with the JVM
+      jvm:
+        memory:
+          # -- The minimum amount of memory that should be allocated for the JVM
+          xms: "512m"
+          # -- The maximum amount of memory that should be allocated for the JVM
+          xmx: "1024m"
+
+    # -- Environment variables for the ICP deployment
+    envs:
+    # -- Set UNIX permissions over the startup scripts
+    configMaps:
+      entryPoint:
+        defaultMode: "0407"
+
+  # Integration Control Plane (ICP) product configurations
+  config:
+    miUserstore:
+      # -- The user name for signing in to the Micro Integrator runtimes
+      username: "admin"
+      # -- The user password for signing in to the Micro Integrator runtimes.
+      password: "admin"
+    userstore:
+      file:
+        # -- Enable/Disable file based userstore
+        enabled: true
+      rdbms:
+        # -- User Database URL
+        url: ""
+        # -- User Database username
+        username: ""
+        # -- User Database password
+        password: ""
+        jdbc:
+          # -- JDBC driver class name of the User Database
+          driver: ""
+          # -- (list) JDBC connection pool parameters of the User Database
+          poolParameters:
+            maxActive: 50
+            maxWait: 60000
+      ldap:
+        type: "read_only_ldap"
+        class: "org.wso2.micro.integrator.security.user.core.ldap.ReadOnlyLDAPUserStoreManager"
+        connectionUrl: ""
+        connectionName: ""
+        connectionPassword: ""
+        anonymousBind: false
+        userSearchBase: ""
+        userNameAttribute: ""
+        userNameSearchFilter: ""
+        userNameListFilter: ""
+        displayNameAttribute: ""
+        readGroups: true
+        groupSearchBase: ""
+        groupNameAttribute: ""
+        groupNameSearchFilter: ""
+        groupNameListFilter: ""
+        membershipAttribute: ""
+        backLinksEnabled: false
+        usernameJavaRegex: "[a-zA-Z0-9._\\-|//]{3,30}$"
+        rolenameJavaRegex: "[a-zA-Z0-9._\\-|//]{3,30}$"
+        passwordJavaRegex: "^[\\S]{5,30}$"
+        scimEnabled: false
+        passwordHashMethod: "PLAIN_TEXT"
+        multiAttributeSeparator: ","
+        maxUserNameListLength: 100
+        maxRoleNameListLength: 100
+        userRolesCacheEnabled: true
+        connectionPoolingEnabled: true
+        ldapConnectionTimeout: 5000
+        # -- (int)
+        readTimeout:
+        # -- (int)
+        retryAttempts:
+        replaceEscapeCharactersAtUserLogin: true
+        readOnly: false
+    secureVault:
+      # -- Enable/Disable secure vault
+      enabled: false
+    keyStore:
+      #  -- The keystore file name
+      fileName: "dashboard.jks"
+      # -- The keystore alias
+      alias: "wso2carbon"
+      # -- The keystore password
+      password: "wso2carbon"
+      # -- The keystore key password
+      keyPassword: "wso2carbon"
+    trustStore:
+      # -- The truststore file name
+      fileName: "client-trustore.jks"
+      # -- The truststore password
+      password: "wso2carbon"
+    # -- Number of threads used by the executor pool to handle incoming requests from Micro Integrator runtimes
+    heartbeatPoolSize: 15
+    # -- ICP server port
+    serverPort: 9743

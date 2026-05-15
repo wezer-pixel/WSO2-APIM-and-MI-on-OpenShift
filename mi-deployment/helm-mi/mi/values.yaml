@@ -1,0 +1,250 @@
+# -- Kubernetes cluster provider. Supported values: azure, aws
+provider: ""
+# -- Container registry (When running on a local Kubernetes cluster using local image, make this empty)
+containerRegistry: ""
+# AWS service configurations
+aws:
+  # -- AWS IAM service account name
+  serviceAccountName: ""
+  # -- AWS region
+  region: ""
+  storage:
+    capacity: "1Gi"
+    storageClass: "efs-sc"
+    fileSystemId: ""        # ← leave empty, created PVC manually
+    cAppAccessPoint: ""     # ← leave empty, created PVC manually
+  # AWS Secret Manager configurations
+  secretManager:
+    # -- AWS Secret Manager secret provider class name
+    secretProviderClass: ""
+    secretIdentifiers:
+      internalKeystorePassword:
+        # -- Secret name for internal keystore password
+        secretName: ""
+        # -- Secret key for internal keystore password
+        secretKey: ""
+# Azure service configurations
+azure:
+  keyVault:
+    # -- Name of the target Azure Key Vault instance
+    name: ""
+    secretProviderClass: ""
+    secretIdentifiers:
+      internalKeystorePassword: ""
+    activeDirectory:
+      # -- Service Principal created for transacting with the target Azure Key Vault
+      # For advanced details refer to official documentation (https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/docs/service-principal-mode.md)
+      servicePrincipal:
+        # -- Azure AD application name for fetching secrets via CSI secret store driver
+        appId: ""
+        # -- Client secret of Azure AD application client
+        clientSecret: ""
+      # -- Azure Active Directory tenant ID of the target Key Vault
+      tenantId: ""
+    resourceManager:
+      # -- Subscription ID of the target Azure Key Vault
+      subscriptionId: ""
+      # -- Name of the Azure Resource Group to which the target Azure Key Vault belongs
+      resourceGroup: ""
+wso2:
+  subscription:
+    # -- WSO2 subscription username
+    username: ""
+    # -- WSO2 subscription password
+    password: ""
+  ingress:
+    # -- Enable Ingress for MI
+    enabled: true
+    # -- Ingress class name
+    ingressClassName: "nginx"
+    # -- (list) Ingress annotations
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    # -- K8s TLS secret for configured hostname
+    tlsSecret: ""
+    ratelimit:
+      # -- Ingress rate limit
+      enabled: false
+      # -- Ingress ratelimit zone name
+      zoneName: ""
+      # -- Ingress ratelimit burst limit
+      burstLimit: ""
+  config:
+    # -- Port offset for Micro Integrator (https://apim.docs.wso2.com/en/latest/install-and-setup/setup/deployment-best-practices/changing-the-default-ports-with-offset/#changing-the-default-mi-ports)
+    portOffset: 10
+    admin:
+      # -- Super admin username
+      username: "admin"
+      # -- Super admin password
+      password: "admin"
+      # -- Create super admin account
+      createAdminAccount: true
+    userstore:
+      file:
+        # -- Enable/Disable file based userstore
+        enabled: true
+    secureVault:
+      # -- Enable/Disable secure vault
+      enabled: false
+    keyStore:
+      primary:
+        # -- Primary keystore file name
+        fileName: "wso2carbon.jks"
+        # -- Primary keystore alias
+        alias: "wso2carbon"
+        # -- Primary keystore password
+        password: "wso2carbon"
+        # -- Primary keystore key password
+        keyPassword: "wso2carbon"
+      internal:
+        # -- Internal keystore file name
+        fileName: "wso2carbon.jks"
+        # -- Internal keystore alias
+        alias: "wso2carbon"
+        # -- Internal keystore password
+        password: "wso2carbon"
+        # -- Internal keystore key password
+        keyPassword: "wso2carbon"
+    trustStore:
+      primary:
+        # -- Primary truststore file name
+        fileName: "client-truststore.jks"
+        # -- Primary truststore password
+        password: "wso2carbon"
+    serviceCatalog:
+      enabled: true
+      apimHost: "https://apim-wso2am-all-in-one-am-service:9443"
+      username: "admin"
+      password: "admin"
+    synapseProperties:
+      'org.wso2.ignoreHostnameVerification': "true"
+        
+    icp:
+      # -- ICP URL
+      url: ""
+  deployment:
+    securityContext:
+      # -- Enable/Disable AppArmor (https://kubernetes.io/docs/tutorials/security/apparmor/)
+      apparmor: false
+      # -- Enable/Disable seccomp profile (https://kubernetes.io/docs/tutorials/security/seccomp/)
+      seccompProfile:
+        # -- Enable/Disable seccomp profile
+        enabled: false
+        # -- Seccomp profile type
+        type: RuntimeDefault
+      enableRunAsUser: false
+      # -- The UID to run the entrypoint of the container process
+      #runAsUser: "10802"
+      enableRunAsGroup: false
+      # -- The GID to run the entrypoint of the container process
+      #runAsGroup: "10802"
+      seLinux:
+        enabled: false
+        level: "s0:c26,c0"
+    # -- Hostname of the Micro Integrator deployment
+    hostname: "mi.apps.rm2.thpm.p1.openshiftapps.com"
+    # -- Build version of the Micro Integrator
+    BuildVersion: "4.4.0"
+    # -- K8s secret name which contains JKS files
+    JKSSecretName: "mi-keystores"
+    mountCapps: true
+    cappsPvcName: "mi-carbonapps-pvc"
+    # -- imagePullSecrets for private docker registry
+    imagePullSecrets: ""
+    image:
+      # -- Container image repository name
+      repository: "wezer/wso2mi-openshift"
+      # -- Container image digest
+      digest: "sha256:ef1cd8978881bbc8df82a71b7bac1a715ff0cea46d1e389df1743ab14b6894f3"
+      # -- Container image tag
+      tag: "4.4.1"
+      # -- Container image pull policy. Refer (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
+      pullPolicy: "IfNotPresent"
+
+    # -- Kubernetes Probes (https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+    probes:
+      # -- Startup probe executed prior to Liveness Probe taking over
+      startup:
+        # -- Number of seconds after the container has started before startup probes are initiated
+        initialDelaySeconds: 5
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 3
+        # -- Number of attempts
+        failureThreshold: 40
+      # -- Indicates whether the container is running
+      liveness:
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 10
+        # -- Indicates whether the container is ready to service requests
+      readiness:
+        # -- Number of seconds after the container has started before readiness probes are initiated
+        initialDelaySeconds: 6
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 1
+
+    # -- Number of deployment replicas
+    replicas: 1
+    # -- Horizontal Pod Autoscaler (HPA) configurations (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    hpa:
+      # -- Enable/Disable Horizontal Pod Autoscaler (HPA)
+      enabled: false
+      # -- Min replica count for HPA
+      minReplicas: 1
+      # -- Max replica count for HPA
+      maxReplicas: 2
+      # -- Average CPU utilization percentage for HPA
+      cpuUtilizationPercentage: 75
+      # -- Average memory utilization percentage for HPA
+      memoryUtilizationPercentage: 75
+    # -- Pod disruption budget configurations (https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
+    pdb:
+      # -- Enable/Disable pod disruption budget
+      enabled: false
+      # -- Min available pods for pod disruption budget
+      minAvailable: 1
+
+    strategy:
+      rollingUpdate:
+        # -- The maximum number of pods that can be scheduled above the desired number of pods.
+        maxSurge: 1
+        # -- The maximum number of pods that can be unavailable during the update.
+        maxUnavailable: 0
+
+    # These are the minimum resource recommendations for running WSO2 Micro Integrator
+    resources:
+      requests:
+        # -- The minimum amount of memory that should be allocated for a Pod
+        memory: "512Mi"
+        # -- The minimum amount of CPU that should be allocated for a Pod
+        cpu: "500m"
+      limits:
+        # -- The maximum amount of memory that should be allocated for a Pod
+        memory: "1Gi"
+        # -- The maximum amount of CPU that should be allocated for a Pod
+        cpu: "1000m"
+
+      # JVM settings
+      # These are the resource allocation configurations associated with the JVM
+      jvm:
+        memory:
+          # -- The minimum amount of memory that should be allocated for the JVM
+          xms: "512m"
+          # -- The maximum amount of memory that should be allocated for the JVM
+          xmx: "1024m"
+
+    # -- (list) Environment variables for the Micro integrator deployment
+    envs:
+    # JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Djavax.net.ssl.trustStoreType=JKS -Dtrust.all.certs=true"
+      JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Dhttps.protocols=TLSv1.2 -Dcom.sun.jndi.ldap.object.trustURLCodebase=false -Djavax.net.debug=none -Djdk.internal.httpclient.disableHostnameVerification=true"
+    # JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Djavax.net.ssl.trustStoreType=JKS -Dtrust.all.certs=true"
+    # wso2_oh_sample_baseUrl: "http://localhost:8290/services/odata"
+    # currency_service_url: "https://dev-tools.wso2.com/gs/helpers/v1.0"
+
+    # Configure synapse testing
+    synapseTest:
+      # -- Enable/Disable synapse testing
+      enabled: false
+    # -- Set UNIX permissions over the startup scripts
+    configMaps:
+      entryPoint:
+        defaultMode: 0755

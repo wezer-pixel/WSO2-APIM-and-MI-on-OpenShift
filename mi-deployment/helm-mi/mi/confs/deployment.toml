@@ -1,0 +1,1122 @@
+[server]
+hostname = {{ .Values.wso2.deployment.hostname | quote }}
+offset  = {{ .Values.wso2.config.portOffset }}
+
+[internal_apis.file_user_store]
+enable = {{ .Values.wso2.config.userstore.file.enabled }}
+
+{{- if not .Values.wso2.config.userstore.file.enabled }}
+[user_store]
+{{- if .Values.wso2.config.userstore.rdbms }}
+class = "org.wso2.micro.integrator.security.user.core.jdbc.JDBCUserStoreManager"
+type = "database"
+{{ else if .Values.wso2.config.userstore.ldap }}
+{{- if .Values.wso2.config.userStore.ldap.type }}
+type = {{ .Values.wso2.config.userStore.ldap.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.class }}
+class = {{ .Values.wso2.config.userStore.ldap.class | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.connectionUrl }}
+connection_url = {{ .Values.wso2.config.userStore.ldap.connectionUrl | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.connectionName }}
+connection_name = {{ .Values.wso2.config.userStore.ldap.connectionName | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.connectionPassword }}
+connection_password = {{ .Values.wso2.config.userStore.ldap.connectionPassword | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.anonymousBind }}
+anonymous_bind = {{ .Values.wso2.config.userStore.ldap.anonymousBind }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.userSearchBase }}
+user_search_base = {{ .Values.wso2.config.userStore.ldap.userSearchBase | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.userNameAttribute }}
+user_name_attribute = {{ .Values.wso2.config.userStore.ldap.userNameAttribute | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.userNameSearchFilter }}
+user_name_search_filter = {{ .Values.wso2.config.userStore.ldap.userNameSearchFilter | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.userNameListFilter }}
+user_name_list_filter = {{ .Values.wso2.config.userStore.ldap.userNameListFilter | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.displayNameAttribute }}
+display_name_attribute = {{ .Values.wso2.config.userStore.ldap.displayNameAttribute | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.readGroups }}
+read_groups = {{ .Values.wso2.config.userStore.ldap.readGroups }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.groupSearchBase }}
+group_search_base = {{ .Values.wso2.config.userStore.ldap.groupSearchBase | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.groupNameAttribute }}
+group_name_attribute = {{ .Values.wso2.config.userStore.ldap.groupNameAttribute | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.groupNameSearchFilter }}
+group_name_search_filter = {{ .Values.wso2.config.userStore.ldap.groupNameSearchFilter | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.groupNameListFilter }}
+group_name_list_filter = {{ .Values.wso2.config.userStore.ldap.groupNameListFilter | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.membershipAttribute }}
+membership_attribute = {{ .Values.wso2.config.userStore.ldap.membershipAttribute | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.backLinksEnabled }}
+back_links_enabled = {{ .Values.wso2.config.userStore.ldap.backLinksEnabled }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.usernameJavaRegex }}
+username_java_regex = {{ .Values.wso2.config.userStore.ldap.usernameJavaRegex | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.rolenameJavaRegex }}
+rolename_java_regex = {{ .Values.wso2.config.userStore.ldap.rolenameJavaRegex | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.passwordJavaRegex }}
+password_java_regex = {{ .Values.wso2.config.userStore.ldap.passwordJavaRegex | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.scimEnabled }}
+scim_enabled = {{ .Values.wso2.config.userStore.ldap.scimEnabled }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.passwordHashMethod }}
+password_hash_method = {{ .Values.wso2.config.userStore.ldap.passwordHashMethod | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.multiAttributeSeparator }}
+multi_attribute_separator = {{ .Values.wso2.config.userStore.ldap.multiAttributeSeparator | quote }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.maxUserNameListLength }}
+max_user_name_list_length = {{ .Values.wso2.config.userStore.ldap.maxUserNameListLength }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.maxRoleNameListLength }}
+max_role_name_list_length = {{ .Values.wso2.config.userStore.ldap.maxRoleNameListLength }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.userRolesCacheEnabled }}
+user_roles_cache_enabled = {{ .Values.wso2.config.userStore.ldap.userRolesCacheEnabled }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.connectionPoolingEnabled }}
+connection_pooling_enabled = {{ .Values.wso2.config.userStore.ldap.connectionPoolingEnabled }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.ldapConnectionTimeout }}
+ldap_connection_timeout = {{ .Values.wso2.config.userStore.ldap.ldapConnectionTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.readTimeout }}
+read_timeout = {{ .Values.wso2.config.userStore.ldap.readTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.retryAttempts }}
+retry_attempts = {{ .Values.wso2.config.userStore.ldap.retryAttempts }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.replaceEscapeCharactersAtUserLogin }}
+replace_escape_characters_at_user_login = {{ .Values.wso2.config.userStore.ldap.replaceEscapeCharactersAtUserLogin }}
+{{- end }}
+{{- if .Values.wso2.config.userStore.ldap.readOnly }}
+read_only = {{ .Values.wso2.config.userStore.ldap.readOnly }}
+{{- end }}
+{{- else }}
+type = "read_only_ldap"
+{{- end }}
+{{- end }}
+
+[super_admin]
+username = {{ .Values.wso2.config.admin.username | quote }}
+create_admin_account = {{ .Values.wso2.config.admin.createAdminAccount }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{super_admin_password}"
+{{- else }}
+password = {{ .Values.wso2.config.admin.password | quote }}
+{{- end }}
+
+[keystore.primary]
+file_name = "repository/resources/security/{{ .Values.wso2.config.keyStore.primary.fileName }}"
+alias = {{ .Values.wso2.config.keyStore.primary.alias | quote }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{primary_keystore_password}"
+key_password = "$secret{primary_keystore_key_password}"
+{{- else }}
+password = {{ .Values.wso2.config.keyStore.primary.password | quote }}
+key_password = {{ .Values.wso2.config.keyStore.primary.keyPassword | quote }}
+{{- end }}
+
+[keystore.internal]
+file_name = "repository/resources/security/{{ .Values.wso2.config.keyStore.internal.fileName }}"
+alias = {{ .Values.wso2.config.keyStore.internal.alias | quote }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{internal_keystore_password}"
+key_password = "$secret{internal_keystore_key_password}"
+{{- else }}
+password = {{ .Values.wso2.config.keyStore.internal.password | quote }}
+key_password = {{ .Values.wso2.config.keyStore.internal.keyPassword | quote }}
+{{- end }}
+
+[truststore]
+file_name = "repository/resources/security/{{ .Values.wso2.config.trustStore.primary.fileName }}"
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{primary_truststore_password}"
+{{- else }}
+password = {{ .Values.wso2.config.trustStore.primary.password | quote }}
+{{- end }}
+alias = "symmetric.key.value"
+algorithm = "AES"
+
+{{- if .Values.wso2.config.userstore.rdbms }}
+[[datasource]]
+id = "WSO2CarbonDB"
+url = {{ .Values.wso2.config.userstore.rdbms.url | quote }}
+username = {{ .Values.wso2.config.userstore.rdbms.username | quote }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{user_db_password}"
+{{- else }}
+password = {{ .Values.wso2.config.userstore.rdbms.password | quote }}
+{{- end }}
+driver = {{ .Values.wso2.config.userstore.rdbms.jdbc.driver | quote }}
+{{- range $key, $value := .Values.wso2.config.userstore.rdbms.jdbc.poolParameters }}
+{{ if typeIs "string" $value }}
+pool_options.{{ $key }} = {{ $value | quote }}
+{{- else }}
+pool_options.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.coordination }}
+[[datasource]]
+id = "WSO2_COORDINATION_DB"
+url = {{ .Values.wso2.config.coordination.rdbms.url | quote }}
+username = {{ .Values.wso2.config.coordination.rdbms.username | quote }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{coordination_db_password}"
+{{- else }}
+password = {{ .Values.wso2.config.coordination.rdbms.password | quote }}
+{{- end }}
+driver = {{ .Values.wso2.config.coordination.rdbms.jdbc.driver | quote }}
+{{- range $key, $value := .Values.wso2.config.coordination.rdbms.jdbc.poolParameters }}
+{{ if typeIs "string" $value }}
+pool_options.{{ $key }} = {{ $value | quote }}
+{{- else }}
+pool_options.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.coordination.nodeId }}
+[cluster_config]
+node_id = {{ .Values.wso2.config.coordination.nodeId | quote }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.secureVault.enabled }}
+[secrets]
+super_admin_password = {{ .Values.wso2.config.admin.password | quote }}
+primary_keystore_password = {{ .Values.wso2.config.keyStore.primary.password | quote }}
+primary_keystore_key_password = {{ .Values.wso2.config.keyStore.primary.keyPassword | quote }}
+internal_keystore_password = {{ .Values.wso2.config.keyStore.internal.password | quote }}
+internal_keystore_key_password = {{ .Values.wso2.config.keyStore.internal.keyPassword | quote }}
+primary_truststore_password = {{ .Values.wso2.config.trustStore.primary.password | quote }}
+{{- if .Values.wso2.config.userstore.rdbms }}
+user_db_password = {{ .Values.wso2.config.userstore.rdbms.password | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport }}
+{{- if .Values.wso2.config.transport.nonBlocking }}
+{{- if .Values.wso2.config.transport.http.nonBlocking }}
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.keystore }}
+transport_sender_keystore_password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.password | quote }}
+transport_sender_keystore_key_password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.keyPassword | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.truststore }}
+transport_sender_truststore_password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.password | quote }}
+{{- end }}
+{{- end }}
+
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.keystore }}
+transport_listener_keystore_password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.password | quote }}
+transport_listener_keystore_key_password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.keyPassword | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.truststore }}
+transport_listener_truststore_password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.truststore.password | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.transport.vfs }}
+{{- if .Values.wso2.config.transport.vfs.listener }}
+{{- if .Values.wso2.config.transport.vfs.listener.keystore }}
+vfs_listener_keystore_password = {{ .Values.wso2.config.transport.vfs.listener.keystore.password | quote }}
+vfs_listener_keystore_key_password = {{ .Values.wso2.config.transport.vfs.listener.keystore.keyPassword | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.serviceCatalog }}
+service_catalog_password = {{ .Values.wso2.config.serviceCatalog.password | quote }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.icp }}
+[dashboard_config]
+dashboard_url = {{ .Values.wso2.config.icp.url | quote }}
+{{- if .Values.wso2.config.icp.heartbeatInterval }}
+heartbeat_interval = {{ .Values.wso2.config.icp.heartbeatInterval }}
+{{- end }}
+{{- if .Values.wso2.config.icp.groupId }}
+group_id = {{ .Values.wso2.config.icp.groupId | quote }}
+{{- else }}
+group_id = {{ .Release.Name | quote }}
+{{- end }}
+{{- if .Values.wso2.config.icp.nodeId }}
+node_id = {{ .Values.wso2.config.icp.nodeId | quote }}
+{{- else }}
+node_id = "$env{POD_NAME}"
+{{- end }}
+{{- if .Values.wso2.config.icp.managementHostname }}
+management_hostname = {{ .Values.wso2.config.icp.managementHostname | quote }}
+{{- end }}
+{{- if .Values.wso2.config.icp.managementPort }}
+management_port = {{ .Values.wso2.config.icp.managementPort }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.serviceCatalog }}
+[[service_catalog]]
+apim_host = {{ .Values.wso2.config.serviceCatalog.apimHost | quote }}
+enable = {{ .Values.wso2.config.serviceCatalog.enabled }}
+username = {{ .Values.wso2.config.serviceCatalog.username | quote }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+password = "$secret{service_catalog_password}"
+{{- else }}
+password = {{ .Values.wso2.config.serviceCatalog.password | quote }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.synapseProperties }}
+[synapse_properties]
+{{- range $key, $value := .Values.wso2.config.synapseProperties }}
+{{ $key | squote }} = {{ $value }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.mediation }}
+[mediation]
+{{- if .Values.wso2.config.mediation.synapse }}
+{{- if .Values.wso2.config.mediation.synapse.coreThreads }}
+synapse.core_threads = {{ .Values.wso2.config.mediation.synapse.coreThreads }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.maxThreads }}
+synapse.max_threads = {{ .Values.wso2.config.mediation.synapse.maxThreads }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.threadsQueueLength }}
+synapse.threads_queue_length = {{ .Values.wso2.config.mediation.synapse.threadsQueueLength }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.globalTimeoutInterval }}
+synapse.global_timeout_interval = {{ .Values.wso2.config.mediation.synapse.globalTimeoutInterval }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.enableXpathDomFailover }}
+synapse.enable_xpath_dom_failover = {{ .Values.wso2.config.mediation.synapse.enableXpathDomFailover }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.tempDataChunkSize }}
+synapse.temp_data_chunk_size = {{ .Values.wso2.config.mediation.synapse.tempDataChunkSize }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.commandDebuggerPort }}
+synapse.command_debugger_port = {{ .Values.wso2.config.mediation.synapse.commandDebuggerPort }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.eventDebuggerPort }}
+synapse.event_debugger_port = {{ .Values.wso2.config.mediation.synapse.eventDebuggerPort }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.scriptMediatorPoolSize }}
+synapse.script_mediator_pool_size = {{ .Values.wso2.config.mediation.synapse.scriptMediatorPoolSize }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.enableXmlNil }}
+synapse.enable_xml_nil = {{ .Values.wso2.config.mediation.synapse.enableXmlNil }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.disableAutoPrimitiveRegex }}
+synapse.disable_auto_primitive_regex = {{ .Values.wso2.config.mediation.synapse.disableAutoPrimitiveRegex | quote }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.disableCustomReplaceRegex }}
+synapse.disable_custom_replace_regex = {{ .Values.wso2.config.mediation.synapse.disableCustomReplaceRegex | quote }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.enableNamespaceDeclaration }}
+synapse.enable_namespace_declaration = {{ .Values.wso2.config.mediation.synapse.enableNamespaceDeclaration }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.buildValidNcName }}
+synapse.build_valid_nc_name = {{ .Values.wso2.config.mediation.synapse.buildValidNcName }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.enableAutoPrimitive }}
+synapse.enable_auto_primitive = {{ .Values.wso2.config.mediation.synapse.enableAutoPrimitive }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.jsonOutAutoArray }}
+synapse.json_out_auto_array = {{ .Values.wso2.config.mediation.synapse.jsonOutAutoArray }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.synapse.preserveNamespaceOnXmlToJson }}
+synapse.preserve_namespace_on_xml_to_json = {{ .Values.wso2.config.mediation.synapse.preserveNamespaceOnXmlToJson }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.flow }}
+{{- if .Values.wso2.config.mediation.flow.statistics }}
+{{- if .Values.wso2.config.mediation.flow.statistics.enable }}
+flow.statistics.enable = {{ .Values.wso2.config.mediation.flow.statistics.enable }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.flow.statistics.captureAll }}
+flow.statistics.capture_all = {{ .Values.wso2.config.mediation.flow.statistics.captureAll }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.flow.tracer }}
+{{- if .Values.wso2.config.mediation.flow.tracer.collectPayloads }}
+stat.tracer.collect_payloads = {{ .Values.wso2.config.mediation.flow.tracer.collectPayloads }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.flow.tracer.collectMediationProperties }}
+stat.tracer.collect_mediation_properties = {{ .Values.wso2.config.mediation.flow.tracer.collectMediationProperties }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.statistics }}
+{{- if .Values.wso2.config.mediation.statistics.enableClean }}
+statistics.enable_clean = {{ .Values.wso2.config.mediation.statistics.enableClean }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.statistics.cleanInterval }}
+statistics.clean_interval = {{ .Values.wso2.config.mediation.statistics.cleanInterval }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.inbound }}
+{{- if .Values.wso2.config.mediation.inbound.coreThreads }}
+inbound.core_threads = {{ .Values.wso2.config.mediation.inbound.coreThreads }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.inbound.maxThreads }}
+inbound.max_threads = {{ .Values.wso2.config.mediation.inbound.maxThreads }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.inbound.portOffsetEnable }}
+inbound.port_offset_enable = {{ .Values.wso2.config.mediation.inbound.portOffsetEnable }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.internalHttpApiEnable }}
+internal_http_api_enable = {{ .Values.wso2.config.mediation.internalHttpApiEnable }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.internalHttpApiPort }}
+internal_http_api_port = {{ .Values.wso2.config.mediation.internalHttpApiPort }}
+{{- end }}
+{{- if .Values.wso2.config.mediation.internalHttpsApiPort }}
+internal_https_api_port = {{ .Values.wso2.config.mediation.internalHttpsApiPort }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.opentelemetry }}
+[opentelemetry]
+{{- if .Values.wso2.config.opentelemetry.enable }}
+enable = {{ .Values.wso2.config.opentelemetry.enable }}
+{{- end }}
+{{- if .Values.wso2.config.opentelemetry.logs }}
+logs = {{ .Values.wso2.config.opentelemetry.logs }}
+{{- end }}
+{{- if .Values.wso2.config.opentelemetry.type }}
+type = {{ .Values.wso2.config.opentelemetry.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.opentelemetry.host }}
+host = {{ .Values.wso2.config.opentelemetry.host | quote }}
+{{- end }}
+{{- if .Values.wso2.config.opentelemetry.port }}
+port = {{ .Values.wso2.config.opentelemetry.port | quote }}
+{{- end }}
+{{- if .Values.wso2.config.opentelemetry.url }}
+url = {{ .Values.wso2.config.opentelemetry.url | quote }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.wso2.config.analytics }}
+[analytics]
+enabled = {{ .Values.wso2.config.analytics.enabled }}
+publisher = {{ .Values.wso2.config.analytics.publisher | quote }}
+id = {{ .Values.wso2.config.analytics.id | quote }}
+prefix = {{ .Values.wso2.config.analytics.prefix | quote }}
+api_analytics.enabled = {{ .Values.wso2.config.analytics.apiAnalytics }}
+proxy_service_analytics.enabled = {{ .Values.wso2.config.analytics.proxyServiceAnalytics }}
+sequence_analytics.enabled = {{ .Values.wso2.config.analytics.sequenceAnalytics }}
+endpoint_analytics.enabled = {{ .Values.wso2.config.analytics.endpointAnalytics }}
+{{- end }}
+
+{{- range $key, $value := .Values.wso2.config.synapseHandlers }}
+[[synapse_handlers]]
+name = {{ $value.name | quote }}
+class = {{ $value.class | quote }}
+{{ end }}
+
+{{- if .Values.wso2.config.messageFormatters }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking }}
+[message_formatters]
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.formUrlencoded }}
+form_urlencoded = {{ .Values.wso2.config.messageFormatters.nonBlocking.formUrlencoded | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.multipartFormData }}
+multipart_form_data = {{ .Values.wso2.config.messageFormatters.nonBlocking.multipartFormData | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.applicationXml }}
+application_xml = {{ .Values.wso2.config.messageFormatters.nonBlocking.applicationXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.textXml }}
+text_xml = {{ .Values.wso2.config.messageFormatters.nonBlocking.textXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.soapXml }}
+soap_xml = {{ .Values.wso2.config.messageFormatters.nonBlocking.soapXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.textPlain }}
+text_plain = {{ .Values.wso2.config.messageFormatters.nonBlocking.textPlain | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.applicationJson }}
+application_json = {{ .Values.wso2.config.messageFormatters.nonBlocking.applicationJson | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.jsonBadgerfish }}
+json_badgerfish = {{ .Values.wso2.config.messageFormatters.nonBlocking.jsonBadgerfish | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.textJavascript }}
+text_javascript = {{ .Values.wso2.config.messageFormatters.nonBlocking.textJavascript | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.octetStream }}
+octet_stream = {{ .Values.wso2.config.messageFormatters.nonBlocking.octetStream | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.nonBlocking.applicationBinary }}
+application_binary = {{ .Values.wso2.config.messageFormatters.nonBlocking.applicationBinary | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.messageFormatters.blocking }}
+[blocking.message_formatters]
+{{- if .Values.wso2.config.messageFormatters.blocking.formUrlencoded }}
+form_urlencoded = {{ .Values.wso2.config.messageFormatters.blocking.formUrlencoded | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.multipartFormData }}
+multipart_form_data = {{ .Values.wso2.config.messageFormatters.blocking.multipartFormData | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.applicationXml }}
+application_xml = {{ .Values.wso2.config.messageFormatters.blocking.applicationXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.textXml }}
+text_xml = {{ .Values.wso2.config.messageFormatters.blocking.textXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.soapXml }}
+soap_xml = {{ .Values.wso2.config.messageFormatters.blocking.soapXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.textPlain }}
+text_plain = {{ .Values.wso2.config.messageFormatters.blocking.textPlain | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.applicationJson }}
+application_json = {{ .Values.wso2.config.messageFormatters.blocking.applicationJson | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.jsonBadgerfish }}
+json_badgerfish = {{ .Values.wso2.config.messageFormatters.blocking.jsonBadgerfish | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.textJavascript }}
+text_javascript = {{ .Values.wso2.config.messageFormatters.blocking.textJavascript | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.octetStream }}
+octet_stream = {{ .Values.wso2.config.messageFormatters.blocking.octetStream | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageFormatters.blocking.applicationBinary }}
+application_binary = {{ .Values.wso2.config.messageFormatters.blocking.applicationBinary | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.messageFormatters.custom }}
+{{- range $key, $value := .Values.wso2.config.messageFormatters.custom.nonBlocking }}
+[[custom_message_formatters]]
+content_type = {{ $value.contentType | quote }}
+class = {{ $value.class | quote }}
+{{ end }}
+
+{{- range $key, $value := .Values.wso2.config.messageFormatters.custom.blocking }}
+[[blocking.custom_message_formatters]]
+content_type = {{ $value.contentType | quote }}
+class = {{ $value.class | quote }}
+{{ end }}
+{{ end }}
+{{- end }}
+
+{{- if .Values.wso2.config.messageBuilders }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking }}
+[message_builders]
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.applicationXml }}
+application_xml = {{ .Values.wso2.config.messageBuilders.nonBlocking.applicationXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.formUrlencoded }}
+form_urlencoded = {{ .Values.wso2.config.messageBuilders.nonBlocking.formUrlencoded | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.multipartFormData }}
+multipart_form_data = {{ .Values.wso2.config.messageBuilders.nonBlocking.multipartFormData | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.textPlain }}
+text_plain = {{ .Values.wso2.config.messageBuilders.nonBlocking.textPlain | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.applicationJson }}
+application_json = {{ .Values.wso2.config.messageBuilders.nonBlocking.applicationJson | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.jsonBadgerfish }}
+json_badgerfish = {{ .Values.wso2.config.messageBuilders.nonBlocking.jsonBadgerfish | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.textJavascript }}
+text_javascript = {{ .Values.wso2.config.messageBuilders.nonBlocking.textJavascript | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.octetStream }}
+octet_stream = {{ .Values.wso2.config.messageBuilders.nonBlocking.octetStream | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.nonBlocking.applicationBinary }}
+application_binary = {{ .Values.wso2.config.messageBuilders.nonBlocking.applicationBinary | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.messageBuilders.blocking }}
+[blocking.message_builders]
+{{- if .Values.wso2.config.messageBuilders.blocking.applicationXml }}
+application_xml = {{ .Values.wso2.config.messageBuilders.blocking.applicationXml | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.formUrlencoded }}
+form_urlencoded = {{ .Values.wso2.config.messageBuilders.blocking.formUrlencoded | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.multipartFormData }}
+multipart_form_data = {{ .Values.wso2.config.messageBuilders.blocking.multipartFormData | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.textPlain }}
+text_plain = {{ .Values.wso2.config.messageBuilders.blocking.textPlain | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.applicationJson }}
+application_json = {{ .Values.wso2.config.messageBuilders.blocking.applicationJson | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.jsonBadgerfish }}
+json_badgerfish = {{ .Values.wso2.config.messageBuilders.blocking.jsonBadgerfish | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.textJavascript }}
+text_javascript = {{ .Values.wso2.config.messageBuilders.blocking.textJavascript | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.octetStream }}
+octet_stream = {{ .Values.wso2.config.messageBuilders.blocking.octetStream | quote }}
+{{- end }}
+{{- if .Values.wso2.config.messageBuilders.blocking.applicationBinary }}
+application_binary = {{ .Values.wso2.config.messageBuilders.blocking.applicationBinary | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.messageBuilders.custom }}
+{{- range $key, $value := .Values.wso2.config.messageBuilders.custom.nonBlocking }}
+[[custom_message_builders]]
+content_type = {{ $value.contentType | quote }}
+class = {{ $value.class | quote }}
+{{ end }}
+
+{{- range $key, $value := .Values.wso2.config.messageBuilders.custom.blocking }}
+[[blocking.custom_message_builders]]
+content_type = {{ $value.contentType | quote }}
+class = {{ $value.class | quote }}
+{{ end }}
+{{ end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport }}
+
+{{- if .Values.wso2.config.transport.vfs }}
+[transport.vfs]
+{{- if .Values.wso2.config.transport.vfs.listener }}
+{{- if .Values.wso2.config.transport.vfs.listener.enable }}
+listener.enable = {{ .Values.wso2.config.transport.vfs.listener.enable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.vfs.listener.keystore }}
+listener.keystore.location = "repository/resources/security/{{ .Values.wso2.config.transport.vfs.listener.keystore.fileName }}"
+{{- if .Values.wso2.config.transport.vfs.listener.keystore.type }}
+listener.keystore.type = {{ .Values.wso2.config.transport.vfs.listener.keystore.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+listener.keystore.password = "$secret{vfs_listener_keystore_password}"
+{{- else }}
+listener.keystore.password = {{ .Values.wso2.config.transport.vfs.listener.keystore.password | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+listener.keystore.key_password = "$secret{vfs_listener_keystore_key_password}"
+{{- else }}
+listener.keystore.key_password = {{ .Values.wso2.config.transport.vfs.listener.keystore.keyPassword | quote }}
+{{- end }}
+listener.keystore.alias = {{ .Values.wso2.config.transport.vfs.listener.keystore.alias | quote }}
+{{- end }}
+{{- range $key, $value := .Values.wso2.config.transport.vfs.listener.customParameters }}
+{{- if typeIs "string" $value }}
+listener.parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+listener.parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.transport.vfs.sender }}
+{{- if .Values.wso2.config.transport.vfs.sender.enable }}
+sender.enable = {{ .Values.wso2.config.transport.vfs.sender.enable }}
+{{- end }}
+{{- range $key, $value := .Values.wso2.config.transport.vfs.sender.customParameters }}
+{{- if typeIs "string" $value }}
+sender.parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+sender.parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.jndi }}
+{{- if .Values.wso2.config.transport.jndi.connectionFactories }}
+[transport.jndi.connection_factories]
+{{- range $key, $value := .Values.wso2.config.transport.jndi.connectionFactories }}
+{{ $value.name }} = {{ $value.url | quote }}
+{{- end }}
+{{- end}}
+
+{{- if .Values.wso2.config.transport.jndi.queue }}
+[transport.jndi.queue]
+{{- range $key, $value := .Values.wso2.config.transport.jndi.queue }}
+{{ $value.jndiName }} = {{ $value.physicalName | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.jndi.topic }}
+[transport.jndi.topic]
+{{- range $key, $value := .Values.wso2.config.transport.jndi.topic }}
+{{ $value.jndiName }} = {{ $value.physicalName | quote }}
+{{- end }}
+{{- end }}
+
+{{- end}}
+
+{{- if .Values.wso2.config.transport.jms }}
+[transport.jms]
+{{- if .Values.wso2.config.transport.jms.sender }}
+sender_enable = true
+{{- end }}
+{{- if .Values.wso2.config.transport.jms.listener }}
+listener_enable = true
+{{- end }}
+
+{{- range $key, $value := .Values.wso2.config.transport.jms.sender }}
+[[transport.jms.sender]]
+name = {{ $value.name | quote }}
+{{- range $key, $value := $value.parameters }}
+{{ if typeIs "string" $value }}
+parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- range $key, $value := .Values.wso2.config.transport.jms.listener }}
+[[transport.jms.listener]]
+name = {{ $value.name | quote }}
+{{- range $key, $value := $value.parameters }}
+{{ if typeIs "string" $value }}
+parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+
+{{- if .Values.wso2.config.transport.rabbitmq }}
+[transport.rabbitmq]
+{{- if .Values.wso2.config.transport.rabbitmq.sender }}
+sender_enable = true
+{{ end }}
+{{- if .Values.wso2.config.transport.rabbitmq.listener }}
+listener_enable = true
+{{ end }}
+
+{{- range $key, $value := .Values.wso2.config.transport.rabbitmq.sender }}
+[[transport.rabbitmq.sender]]
+name = {{ $value.name | quote }}
+{{- range $key, $value := $value.parameters }}
+{{ if typeIs "string" $value }}
+parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- range $key, $value := .Values.wso2.config.transport.rabbitmq.listener }}
+[[transport.rabbitmq.listener]]
+name = {{ $value.name | quote }}
+{{- range $key, $value := $value.parameters }}
+{{- if typeIs "string" $value }}
+parameter.{{ $key }} = {{ $value | quote }}
+{{- else }}
+parameter.{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http }}
+{{- if .Values.wso2.config.transport.http.nonBlocking }}
+[transport.http]
+{{- if .Values.wso2.config.transport.http.nonBlocking.socketTimeout }}
+socket_timeout = {{ .Values.wso2.config.transport.http.nonBlocking.socketTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.coreWorkerPoolSize }}
+core_worker_pool_size = {{ .Values.wso2.config.transport.http.nonBlocking.coreWorkerPoolSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.maxWorkerPoolSize }}
+max_worker_pool_size = {{ .Values.wso2.config.transport.http.nonBlocking.maxWorkerPoolSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.workerPoolQueueLength }}
+worker_pool_queue_length = {{ .Values.wso2.config.transport.http.nonBlocking.workerPoolQueueLength }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.ioBufferSize }}
+io_buffer_size = {{ .Values.wso2.config.transport.http.nonBlocking.ioBufferSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.maxHttpConnectionPerHostPort }}
+max_http_connection_per_host_port = {{ .Values.wso2.config.transport.http.nonBlocking.maxHttpConnectionPerHostPort }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.preserveHttpUserAgent }}
+preserve_http_user_agent = {{ .Values.wso2.config.transport.http.nonBlocking.preserveHttpUserAgent }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.preserveHttpServerName }}
+preserve_http_server_name = {{ .Values.wso2.config.transport.http.nonBlocking.preserveHttpServerName }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.preserveHttpHeaders }}
+preserve_http_headers = [{{- range $key, $value := .Values.wso2.config.transport.http.nonBlocking.preserveHttpHeaders }}{{if $key}}, {{end}}{{ $value | quote }} {{- end }}]
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.disableConnectionKeepalive }}
+disable_connection_keepalive = {{ .Values.wso2.config.transport.http.nonBlocking.disableConnectionKeepalive }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.enableMessageSizeValidation }}
+enable_message_size_validation = {{ .Values.wso2.config.transport.http.nonBlocking.enableMessageSizeValidation }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.maxMessageSizeBytes }}
+max_message_size_bytes = {{ .Values.wso2.config.transport.http.nonBlocking.maxMessageSizeBytes }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.maxOpenConnections }}
+max_open_connections = {{ .Values.wso2.config.transport.http.nonBlocking.maxOpenConnections }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.forceXmlValidation }}
+force_xml_validation = {{ .Values.wso2.config.transport.http.nonBlocking.forceXmlValidation }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.forceJsonValidation }}
+force_json_validation = {{ .Values.wso2.config.transport.http.nonBlocking.forceJsonValidation }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.reverseProxyMode }}
+reverse_proxy_mode = {{ .Values.wso2.config.transport.http.nonBlocking.reverseProxyMode }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.enable }}
+listener.enable = {{ .Values.wso2.config.transport.http.nonBlocking.listener.enable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.port }}
+listener.port = {{ .Values.wso2.config.transport.http.nonBlocking.listener.port }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.wsdlEprPrefix }}
+listener.wsdl_epr_prefix = {{ .Values.wso2.config.transport.http.nonBlocking.listener.wsdlEprPrefix | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.bindAddress }}
+listener.bind_address = {{ .Values.wso2.config.transport.http.nonBlocking.listener.bindAddress | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.securedEnable }}
+listener.secured_enable = {{ .Values.wso2.config.transport.http.nonBlocking.listener.securedEnable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.securedPort }}
+listener.secured_port = {{ .Values.wso2.config.transport.http.nonBlocking.listener.securedPort }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.securedWsdlEprPrefix }}
+listener.secured_wsdl_epr_prefix = {{ .Values.wso2.config.transport.http.nonBlocking.listener.securedWsdlEprPrefix | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.securedBindAddress }}
+listener.secured_bind_address = {{ .Values.wso2.config.transport.http.nonBlocking.listener.securedBindAddress | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.securedProtocols }}
+listener.secured_protocols = {{ .Values.wso2.config.transport.http.nonBlocking.listener.securedProtocols | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.verifyClient }}
+listener.verify_client = {{ .Values.wso2.config.transport.http.nonBlocking.listener.verifyClient | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.preferredCiphers }}
+listener.preferred_ciphers = {{ .Values.wso2.config.transport.http.nonBlocking.listener.preferredCiphers | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.sslProfile }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.sslProfile.filePath }}
+listener.ssl_profile.file_path = {{ .Values.wso2.config.transport.http.nonBlocking.listener.sslProfile.filePath | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.sslProfile.readInterval }}
+listener.ssl_profile.read_interval = {{ .Values.wso2.config.transport.http.nonBlocking.listener.sslProfile.readInterval }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationVerifierEnable }}
+listener.certificate_revocation_verifier_enable = {{ .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationVerifierEnable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationCacheSize }}
+listener.certificate_revocation_cache_size = {{ .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationCacheSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationCacheDelay }}
+listener.certificate_revocation_cache_delay = {{ .Values.wso2.config.transport.http.nonBlocking.listener.certificateRevocationCacheDelay }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.keystore }}
+listener.keystore.location = "repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.fileName }}"
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.keystore.type }}
+listener.keystore.type = {{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+listener.keystore.password = "$secret{transport_listener_keystore_password}"
+listener.keystore.key_password = "$secret{transport_listener_keystore_key_password}"
+{{- else }}
+listener.keystore.password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.password | quote }}
+listener.keystore.key_password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.keyPassword | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.truststore }}
+listener.truststore.location = "repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.listener.truststore.fileName }}"
+{{- if .Values.wso2.config.transport.http.nonBlocking.listener.truststore.type }}
+listener.truststore.type = {{ .Values.wso2.config.transport.http.nonBlocking.listener.truststore.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+listener.truststore.password = "$secret{transport_listener_truststore_password}"
+{{- else }}
+listener.truststore.password = {{ .Values.wso2.config.transport.http.nonBlocking.listener.truststore.password | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.enable }}
+sender.enable = {{ .Values.wso2.config.transport.http.nonBlocking.sender.enable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.warnOnHttp500 }}
+sender.warn_on_http_500 = {{ .Values.wso2.config.transport.http.nonBlocking.sender.warnOnHttp500 | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.proxyHost }}
+sender.proxy_host = {{ .Values.wso2.config.transport.http.nonBlocking.sender.proxyHost | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.proxyPort }}
+sender.proxy_port = {{ .Values.wso2.config.transport.http.nonBlocking.sender.proxyPort }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.securedProxyHost }}
+sender.secured_proxy_host = {{ .Values.wso2.config.transport.http.nonBlocking.sender.securedProxyHost | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.securedProxyPort }}
+sender.secured_proxy_port = {{ .Values.wso2.config.transport.http.nonBlocking.sender.securedProxyPort }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.nonProxyHosts }}
+sender.non_proxy_hosts = {{ .Values.wso2.config.transport.http.nonBlocking.sender.nonProxyHosts | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.hostnameVerifier }}
+sender.hostname_verifier = {{ .Values.wso2.config.transport.http.nonBlocking.sender.hostnameVerifier | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.securedProtocols }}
+sender.secured_protocols = {{ .Values.wso2.config.transport.http.nonBlocking.sender.securedProtocols | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationVerifierEnable }}
+sender.certificate_revocation_verifier_enable = {{ .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationVerifierEnable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationCacheSize }}
+sender.certificate_revocation_cache_size = {{ .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationCacheSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationCacheDelay }}
+sender.certificate_revocation_cache_delay = {{ .Values.wso2.config.transport.http.nonBlocking.sender.certificateRevocationCacheDelay }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.securedEnable }}
+sender.secured_enable = {{ .Values.wso2.config.transport.http.nonBlocking.sender.securedEnable }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.keystore }}
+sender.keystore.location = "repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.fileName }}"
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.keystore.type }}
+sender.keystore.type = {{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+sender.keystore.password = "$secret{transport_sender_keystore_password}"
+sender.keystore.key_password = "$secret{transport_sender_keystore_key_password}"
+{{- else }}
+sender.keystore.password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.password | quote }}
+sender.keystore.key_password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.keyPassword | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.truststore }}
+sender.truststore.location = "repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.fileName }}"
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.truststore.type }}
+sender.truststore.type = {{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.type | quote }}
+{{- end }}
+{{- if .Values.wso2.config.secureVault.enabled }}
+sender.truststore.password = "$secret{transport_sender_truststore_password}"
+{{- else }}
+sender.truststore.password = {{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.password | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.sslProfile }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.sslProfile.filePath }}
+sender.ssl_profile.file_path = {{ .Values.wso2.config.transport.http.nonBlocking.sender.sslProfile.filePath | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.nonBlocking.sender.sslProfile.readInterval }}
+sender.ssl_profile.read_interval = {{ .Values.wso2.config.transport.http.nonBlocking.sender.sslProfile.readInterval }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+
+{{- if .Values.wso2.config.transport.http.blocking }}
+[transport.http.blocking]
+{{- if .Values.wso2.config.transport.http.blocking.listener.enable }}
+listener.enable = {{ .Values.wso2.config.transport.http.blocking.listener.enable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.port }}
+listener.port = {{ .Values.wso2.config.transport.http.blocking.listener.port }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.hostname }}
+listener.hostname = {{ .Values.wso2.config.transport.http.blocking.listener.hostname | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.originServer }}
+listener.origin_server = {{ .Values.wso2.config.transport.http.blocking.listener.originServer | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.requestTimeout }}
+listener.request_timeout = {{ .Values.wso2.config.transport.http.blocking.listener.requestTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.requestTcpNoDelay }}
+listener.request_tcp_no_delay = {{ .Values.wso2.config.transport.http.blocking.listener.requestTcpNoDelay }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.requestCoreThreadPoolSize }}
+listener.request_core_thread_pool_size = {{ .Values.wso2.config.transport.http.blocking.listener.requestCoreThreadPoolSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.requestMaxThreadPoolSize }}
+listener.request_max_thread_pool_size = {{ .Values.wso2.config.transport.http.blocking.listener.requestMaxThreadPoolSize }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.threadKeepaliveTime }}
+listener.thread_keepalive_time = {{ .Values.wso2.config.transport.http.blocking.listener.threadKeepaliveTime }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.listener.threadKeepaliveTimeUnit }}
+listener.thread_keepalive_time_unit = {{ .Values.wso2.config.transport.http.blocking.listener.threadKeepaliveTimeUnit | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.enable }}
+sender.enable = {{ .Values.wso2.config.transport.http.blocking.sender.enable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.enableClientCaching }}
+sender.enable_client_caching = {{ .Values.wso2.config.transport.http.blocking.sender.enableClientCaching }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.transferEncoding }}
+sender.transfer_encoding = {{ .Values.wso2.config.transport.http.blocking.sender.transferEncoding | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.defaultConnectionsPerHost }}
+sender.default_connections_per_host = {{ .Values.wso2.config.transport.http.blocking.sender.defaultConnectionsPerHost }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.omitSoap12Action }}
+sender.omit_soap12_action = {{ .Values.wso2.config.transport.http.blocking.sender.omitSoap12Action }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.soTimeout }}
+sender.so_timeout = {{ .Values.wso2.config.transport.http.blocking.sender.soTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.proxyHost }}
+sender.proxy_host = {{ .Values.wso2.config.transport.http.blocking.sender.proxyHost | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.proxyPort }}
+sender.proxy_port = {{ .Values.wso2.config.transport.http.blocking.sender.proxyPort }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedEnable }}
+sender.secured_enable = {{ .Values.wso2.config.transport.http.blocking.sender.securedEnable }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedEnableClientCaching }}
+sender.secured_enable_client_caching = {{ .Values.wso2.config.transport.http.blocking.sender.securedEnableClientCaching }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedTransferEncoding }}
+sender.secured_transfer_encoding = {{ .Values.wso2.config.transport.http.blocking.sender.securedTransferEncoding | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedDefaultConnectionsPerHost }}
+sender.secured_default_connections_per_host = {{ .Values.wso2.config.transport.http.blocking.sender.securedDefaultConnectionsPerHost }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedOmitSoap12Action }}
+sender.secured_omit_soap12_action = {{ .Values.wso2.config.transport.http.blocking.sender.securedOmitSoap12Action }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedSoTimeout }}
+sender.secured_so_timeout = {{ .Values.wso2.config.transport.http.blocking.sender.securedSoTimeout }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedProxyHost }}
+sender.secured_proxy_host = {{ .Values.wso2.config.transport.http.blocking.sender.securedProxyHost | quote }}
+{{- end }}
+{{- if .Values.wso2.config.transport.http.blocking.sender.securedProxyPort }}
+sender.secured_proxy_port = {{ .Values.wso2.config.transport.http.blocking.sender.securedProxyPort }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.managementApi }}
+{{- if .Values.wso2.config.managementApi.cors }}
+[management_api.cors]
+{{- if .Values.wso2.config.managementApi.cors.enabled }}
+enabled = {{ .Values.wso2.config.managementApi.cors.enabled }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.cors.allowedOrigins }}
+allowed_origins = {{ .Values.wso2.config.managementApi.cors.allowedOrigins | quote }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.cors.allowedHeaders }}
+allowed_headers = {{ .Values.wso2.config.managementApi.cors.allowedHeaders | quote }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler }}
+[management_api.jwt_token_security_handler]
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.enable }}
+enable = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.enable }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.maxSize }}
+token_store_config.max_size = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.maxSize }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.cleanUpInterval }}
+token_store_config.clean_up_interval = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.cleanUpInterval }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.removeOldestTokenOnOverflow }}
+token_store_config.remove_oldest_token_on_overflow = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenStoreConfig.removeOldestTokenOnOverflow }}
+{{- end }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenConfig }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenConfig.expiry }}
+token_config.expiry = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenConfig.expiry }}
+{{- end }}
+{{- if .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenConfig.size }}
+token_config.size = {{ .Values.wso2.config.managementApi.jwtTokenSecurityHandler.tokenConfig.size }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.wso2.config.managementApi.authorizationHandler }}
+[management_api.authorization_handler]
+{{- if .Values.wso2.config.managementApi.authorizationHandler.enable }}
+enable = {{ .Values.wso2.config.managementApi.authorizationHandler.enable }}
+{{- end }}
+
+{{- range $key, $value := .Values.wso2.config.managementApi.authorizationHandler.resources }}
+[[management_api.authorization_handler.resources]]
+path = {{ $value | quote }}
+{{ end }}
+{{- end }}
+{{- end }}
+
+{{ if and .Values.wso2.config.vault .Values.wso2.config.vault.hashicorp }}
+[[external_vault]]
+name = "hashicorp"
+address = {{ .Values.wso2.config.vault.hashicorp.address | quote }}
+{{- if .Values.wso2.config.vault.hashicorp.rootToken }}
+rootToken = {{ .Values.wso2.config.vault.hashicorp.rootToken | quote }}
+{{- else }}
+roleId = {{ .Values.wso2.config.vault.hashicorp.roleId | quote }}
+secretId = {{ .Values.wso2.config.vault.hashicorp.secretId | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.cacheableDuration }}
+cacheableDuration = {{ .Values.wso2.config.vault.hashicorp.cacheableDuration | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.engineVersion }}
+engineVersion = {{ .Values.wso2.config.vault.hashicorp.engineVersion | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.namespace }}
+namespace = {{ .Values.wso2.config.vault.hashicorp.namespace | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.trustStoreFile }}
+trustStoreFile = {{ .Values.wso2.config.vault.hashicorp.trustStoreFile | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.keyStoreFile }}
+keyStoreFile = {{ .Values.wso2.config.vault.hashicorp.keyStoreFile | quote }}
+{{- end }}
+{{- if .Values.wso2.config.vault.hashicorp.keyStorePassword }}
+keyStorePassword = {{ .Values.wso2.config.vault.hashicorp.keyStorePassword | quote }}
+{{- end }}
+{{- end }}
+[transport.passthrough]
+disable_ssl_verification = true
