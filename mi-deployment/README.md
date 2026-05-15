@@ -139,7 +139,7 @@ oc apply -f helm-mi/mi/mi-init-pod.yaml -n <your-namespace>
 
 # Copy your .car file into the pod
 oc cp helm-mi/mi/carbonapps/HelloWorld_1.0.0.car \
-  <init-pod-name>:/data/ -n <your-namespace>
+  <init-pod-name>:/carbonapps/ -n <your-namespace>
 
 # Clean up
 oc delete -f helm-mi/mi/mi-init-pod.yaml -n <your-namespace>
