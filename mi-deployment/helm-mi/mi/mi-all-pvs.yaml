@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mi-carbonapps-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-sc
+  nfs:
+    path: /var/wso2lab-nfs/carbonapps
+    server: 172.24.50.2
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mi-conf-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-sc
+  nfs:
+    path: /var/wso2lab-nfs/conf
+    server: 172.24.50.2
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mi-security-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-sc
+  nfs:
+    path: /var/wso2lab-nfs/security
+    server: 172.24.50.2

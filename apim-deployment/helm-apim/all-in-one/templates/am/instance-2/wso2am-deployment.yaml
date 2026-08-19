@@ -49,14 +49,15 @@ spec:
                   - {{ template "am-all-in-one.fullname" . }}
               topologyKey: "topology.kubernetes.io/zone"
             weight: 100
-      {{- if .Values.wso2.apim.secureVaultEnabled }} 
       {{- if .Values.aws.enabled }}
-      serviceAccount: {{ .Values.aws.serviceAccountName }}
+      serviceAccountName: {{ .Values.aws.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.aws.automountServiceAccountToken }}
       {{- else if .Values.gcp.enabled }}
-      serviceAccount: {{ .Values.gcp.serviceAccountName }}
+      serviceAccountName: {{ .Values.gcp.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.gcp.automountServiceAccountToken }}
       {{- else if .Values.azure.enabled }}
-      serviceAccount: {{ .Values.azure.serviceAccountName }}
-      {{- end }}
+      serviceAccountName: {{ .Values.azure.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.azure.automountServiceAccountToken }}
       {{- end }}
       securityContext:
         seccompProfile:
@@ -66,11 +67,21 @@ spec:
           {{- end }}
       {{- if and .Values.wso2.deployment.image.imagePullSecrets.enabled }}
       imagePullSecrets:
+      {{- if .Values.wso2.deployment.image.imagePullSecrets.name }}
+      - name: {{ .Values.wso2.deployment.image.imagePullSecrets.name }}
+      {{- else }}
       - name: {{ template "am-all-in-one.fullname" . }}-docker-registry-auth
+      {{- end }}
       {{- end }}
       containers:
         - name: wso2am
+          {{- if .Values.wso2.deployment.image.digest }}
           image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}@{{ .Values.wso2.deployment.image.digest }}
+          {{- else if .Values.wso2.deployment.image.tag }}
+          image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}:{{ .Values.wso2.deployment.image.tag }}
+          {{- else }}
+          image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}
+          {{- end }}
           imagePullPolicy: {{ .Values.wso2.deployment.image.imagePullPolicy }}
           env:
             - name: NODE_IP
@@ -167,21 +178,21 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - timeout 1 bash -c "</dev/tcp/localhost/9443"
+                - timeout 1 bash -c "</dev/tcp/localhost/{{ add 9443 .Values.wso2.apim.portOffset }}"
             initialDelaySeconds: {{ .Values.wso2.deployment.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.wso2.deployment.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.wso2.deployment.startupProbe.failureThreshold }}         
           livenessProbe:
             httpGet:
               path: /services/Version
-              port: 9763
+              port: {{ add 9763 .Values.wso2.apim.portOffset }}
             initialDelaySeconds: {{ .Values.wso2.deployment.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.wso2.deployment.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.wso2.deployment.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /api/am/gateway/v2/server-startup-healthcheck
-              port: 9443
+              port: {{ add 9443 .Values.wso2.apim.portOffset }}
               scheme: HTTPS
             initialDelaySeconds: {{ .Values.wso2.deployment.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.wso2.deployment.readinessProbe.periodSeconds }}
@@ -216,19 +227,19 @@ spec:
             capabilities:
               drop: ["ALL"]
           ports:
-            - containerPort: 8280
+            - containerPort: {{ add 8280 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 8243
+            - containerPort: {{ add 8243 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 9763
+            - containerPort: {{ add 9763 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 9443
+            - containerPort: {{ add 9443 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 9711
+            - containerPort: {{ add 9711 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 9611
+            - containerPort: {{ add 9611 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
-            - containerPort: 5672
+            - containerPort: {{ add 5672 .Values.wso2.apim.portOffset }}
               protocol: "TCP"
           volumeMounts:
             - name: wso2am-conf
@@ -291,6 +302,10 @@ spec:
             - name: wso2am-solr
               mountPath: /home/wso2carbon/solr/indexed-data
             {{ end }}
+            {{- if .Values.kubernetes.openshift.enabled }}
+            - name: wso2am-security-dir
+              mountPath: /home/wso2carbon/tmp-security
+            {{- end }}
       {{- if .Values.wso2.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.wso2.deployment.nodeSelector | nindent 8 }}
@@ -364,4 +379,8 @@ spec:
           persistentVolumeClaim:
             claimName: {{ template "am-all-in-one.fullname" . }}-am-solr-indexed-data-volume-claim
         {{ end }}
+        {{- if .Values.kubernetes.openshift.enabled }}
+        - name: wso2am-security-dir
+          emptyDir: {}
+        {{- end }}
 {{- end }}

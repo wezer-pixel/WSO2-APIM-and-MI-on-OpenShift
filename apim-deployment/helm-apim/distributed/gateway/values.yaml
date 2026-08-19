@@ -31,9 +31,15 @@ aws:
         # -- AWS Secrets Manager secret key
         secretKey: ""
   serviceAccountName: ""
+  # -- Whether to automatically mount the aws service account token to the pod
+  automountServiceAccountToken: true
 azure:
   # -- If Azure is used as the cloud provider
   enabled: false
+  # -- Name of the Azure Kubernetes service account
+  serviceAccountName: ""
+  # -- Whether to automatically mount the azure service account token to the pod
+  automountServiceAccountToken: true
   keyVault:
     # -- Azure Key vault used for credential management
     name: ""
@@ -87,6 +93,8 @@ gcp:
       secretVersion: ""
   # -- Service Account with access to read secrets
   serviceAccountName: ""
+  # -- Whether to automatically mount the gcp service account token to the pod
+  automountServiceAccountToken: true
 
 kubernetes:
   # -- When deploying on OpenShift.
@@ -172,7 +180,7 @@ kubernetes:
   # -- Kubernetes Gateway API configurations (alternative to Ingress)
   # Requires Gateway API CRDs to be installed in the cluster
   # The Gateway resource must be created externally before deploying this chart
-  # See docs/assets/sample-gateway.yaml for an example Gateway manifest
+  # See resources/assets/sample-gateway.yaml for an example Gateway manifest
   gatewayAPI:
     # -- Enable Gateway API resources (HTTPRoutes and policies)
     enabled: true
@@ -217,6 +225,8 @@ kubernetes:
   securityContext:
     # -- User ID of the container
     runAsUser: 10001
+    # -- Group ID of the container
+    runAsGroup: 10001
     # -- SELinux context for the container
     seLinux:
       enabled: false
@@ -277,6 +287,13 @@ wso2:
     portOffset: 0
     # -- Startup arguments for APIM
     startupArgs: ""
+    # -- ulimit settings for the APIM container. Required when running on platforms like AWS Fargate
+    # where the default nproc and nofile limits (1024) are insufficient.
+    ulimits:
+      # -- Maximum number of processes (nproc). Set to meet WSO2 recommended requirements.
+      nproc:
+      # -- Maximum number of open files (nofile). Set to meet WSO2 recommended requirements.
+      nofile:
     # -- Startup script mount status
     mountStartupScript: false
     # TOML configurations
@@ -292,8 +309,6 @@ wso2:
       existingSecret:
         secretName: "" # e.g apim-secret
         adminPasswordKey: ""  # e.g adminPassword
-        apimDBPasswordKey: "" # e.g apimDBPassword
-        sharedDBPasswordKey: "" # e.g sharedDBPassword
         encryptionKeyKey: "" # e.g encryptionKey
       userStore:
         # -- User store type. 
@@ -306,29 +321,6 @@ wso2:
       adminUsername: ""
       # -- Super admin password
       adminPassword: ""
-      databases:
-        # -- Database type. eg: mysql, oracle, mssql, postgres
-        type: ""
-        jdbc:
-          # -- JDBC driver class name
-          driver: ""
-        # -- APIM SharedDB configurations. This is required for gateway only in a multi-tenancy scenario
-        shared_db:
-          # -- APIM SharedDB URL
-          url: ""
-          # -- APIM SharedDB username
-          username: ""
-          # -- APIM SharedDB password
-          password: ""
-          # -- APIM database JDBC pool parameters
-          poolParameters:
-            defaultAutoCommit: true
-            testOnBorrow: true
-            testWhileIdle: true
-            validationInterval: 30000
-            maxActive: 100
-            maxWait: 60000
-            minIdle: 5
 
       # -- APIM AI related configurations
       ai:
@@ -405,6 +397,9 @@ wso2:
         gateway:
           # -- Gateway label used to filter out artifact retrieval
           labels: ["Default"]
+          # -- Enable on-demand artifact loading in the gateway
+          onDemandLoading:
+            enabled: false
         tenantLoading:
           # -- Enable tenant loading in the gateway for artifacts
           enabled: false
@@ -507,8 +502,8 @@ wso2:
 
       # APIM OAuth configurations
       oauth_config:
-        # -- Remove oauth header from outgoing requests
-        removeOutboundAuthHeader: true
+        # -- Preserves auth header in outgoing requests
+        enableOutboundAuthHeader: false
         # -- OAuth authorization header name
         authHeader: "Authorization"
         # -- Enable token encryption
@@ -577,12 +572,16 @@ wso2:
       # Specify image pull secrets for private registries
       imagePullSecrets:
         enabled: false
+        # -- Name of an existing image pull secret in the namespace. If set, this secret is used directly and no new secret is created.
+        name: ""
         username: ""
         password: ""
       # -- Container registry hostname
       registry: ""
       # -- Azure ACR repository name consisting the image
       repository: ""
+      # -- Docker image tag
+      tag: ""
       # -- Docker image digest
       digest: ""
       # -- Refer to the Kubernetes documentation on updating images (https://kubernetes.io/docs/concepts/containers/images/#updating-images)

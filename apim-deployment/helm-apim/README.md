@@ -1,227 +1,82 @@
 # helm-apim
 
-This repo maintains WSO2 API Manager Helm charts and supporting assets for deployment on OpenShift (ROSA) and other Kubernetes platforms.
-
----
-
-## Repository Structure
-
-```
-apim-deployment/
-├── apim/                        # Docker customization and database setup
-│   ├── Dockerfile               # Custom APIM image for OpenShift compatibility
-│   ├── DB_SETUP.md              # Database setup guide (start here for DB setup)
-│   ├── mysql.yaml               # In-cluster MySQL manifest (dev/demo)
-│   ├── db-scripts/
-│   │   ├── apimgt/mysql.sql     # Schema for wso2amdb
-│   │   └── shareddb/mysql.sql   # Schema for wso2shareddb
-│   ├── keystores/               # Source keystore files (wso2carbon.jks, client-truststore.jks)
-│   └── lib/
-│       └── mysql-connector-j-8.0.32.jar   # MySQL JDBC driver (bundled into Docker image)
-│
-└── helm-apim/                   # Helm charts
-    ├── README.md                # This file
-    ├── apim-secrets/            # Keystore files used to create the Kubernetes secret
-    ├── all-in-one/              # All-in-one deployment (single node / HA)
-    │   ├── values.yaml          # Active deployment values
-    │   ├── openshift-values.yaml
-    │   ├── confs/               # TOML, log4j2, entrypoint, and frontend configs
-    │   └── templates/           # Kubernetes resource templates
-    └── distributed/             # Distributed deployment charts
-        ├── control-plane/
-        ├── gateway/
-        ├── key-manager/
-        └── traffic-manager/
-```
-
----
+This repo will be used to maintain APIM related helm charts
 
 ## Prerequisites
 
-- A running OpenShift (ROSA) or Kubernetes cluster.
-- Helm 3.x and the `oc` / `kubectl` CLI installed.
-- A custom APIM Docker image built from `apim/Dockerfile` and pushed to your container registry. The Dockerfile bundles the MySQL JDBC driver and applies the OpenShift-compatible permissions required by WSO2. Update `wso2.deployment.image` in `values.yaml` to point to your image.
-- MySQL 8.x reachable from within the cluster, with both databases created and schemas applied. See [`apim/DB_SETUP.md`](../apim/DB_SETUP.md) for full instructions.
-- Configure the mandatory symmetric encryption key (`wso2.apim.configurations.encryption.key`) before first startup. This key must be identical across all nodes in HA or distributed deployments.
-- For routing, OpenShift Routes are used by default (configured in `values.yaml` under `kubernetes.route`). NGINX Ingress and Envoy Gateway API are also supported but disabled by default.
-- If enabling Secure Vault, configure the secret manager for your cloud provider (AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager).
-- If enabling Solr indexing, provision persistent storage for the Carbon database and Solr index data.
+- WSO2 Product Docker images required for the deployment.  - It is recommended to push your own images to the cloud provider's container registry (ACR, ECR, etc.) as a best practice. Refer [U2 documentation](https://updates.docs.wso2.com/en/latest/updates/how-to-use-docker-images-to-receive-updates/) for any additional information.
 
----
+    Note that you need a valid WSO2 subscription to obtain the U2 updated docker images from the WSO2 private registry.
 
-## Deployment Guide
+- A running Kubernetes cluster (AKS, EKS, etc.)
 
-### Step 1: Build and Push the Custom Docker Image
+- Configure the mandatory symmetric internal encryption key (`wso2.apim.configurations.encryption.key`) before the first startup. This key is used by API Manager for internal encryption and decryption of shared data, and the same value must be used across all nodes in HA or distributed deployments.
 
-The `apim/Dockerfile` extends the base WSO2 APIM image to bundle the MySQL JDBC driver and fix file permissions for OpenShift's restricted SCC (which runs containers as a non-root, arbitrary UID).
+- Controller for routing traffic. You can use either:
+  - **[Envoy Gateway](https://gateway.envoyproxy.io/docs/install/install-helm/)** (enabled by default) - **RECOMMENDED**: Gateway API-based approach for a more modern, role-oriented API.
+  To customize the routing you can use any of the [Gateway API Extensions](https://gateway.envoyproxy.io/docs/api/extension_types/) provided by Envoy
+  - **[NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx/deploy/)** (disabled by default) - **DEPRECATED**: Traditional Ingress-based approach. While still supported, this option is deprecated and will be removed in future releases.
+  
+    Some sample annotations that could be used with the ingress resources are as follows.
 
-```bash
-cd apim/
-docker build -t <your-registry>/wso2am-openshift:<tag> .
-docker push <your-registry>/wso2am-openshift:<tag>
-```
+    > The ingress class should be set to `nginx` in the ingress resource if you are using the NGINX Ingress Controller.
 
-Update `helm-apim/all-in-one/values.yaml`:
+    ```yaml
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+    nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    ```
 
-```yaml
-wso2:
-  deployment:
-    image:
-      registry: "<your-registry>"
-      repository: "wso2am-openshift"
-      tag: "<tag>"
-```
+  However, if you are deploying the charts in AWS, you can use the [AWS ALB Ingress Controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main) as well. If you are using ACM to manage the certificates, using this controller over the nginx ingress controller would be more convenient.
 
----
+  > Note that the current tested version of the controller is 2.6.x.
+  
+  > The ingress class should be set to `alb` in the ingress resource if you are using the AWS ALB Ingress Controller.
 
-### Step 2: Set Up the Databases
+  If the controller is not already available in your cluster, you can [configure the relevent IAM service account](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/deploy/installation/#configure-iam) and [deploy the controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/deploy/installation/#add-controller-to-cluster) in the cluster by following the instructions in the respective documentation.
 
-Follow **[`apim/DB_SETUP.md`](../apim/DB_SETUP.md)** for complete instructions. That guide covers:
+  You need the following annotations for ingress resources if you are using the AWS ALB Ingress Controller.
 
-- Deploying an in-cluster MySQL pod (dev/demo) or connecting to an external RDS instance (production).
-- Creating the `wso2amdb` and `wso2shareddb` databases.
-- Running the schema scripts from `apim/db-scripts/`.
-- Creating the `wso2` database user with the required grants.
+  ```
+  alb.ingress.kubernetes.io/group.name: <group_name>
+  alb.ingress.kubernetes.io/scheme: internet-facing
+  alb.ingress.kubernetes.io/target-type: ip
+  alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+  alb.ingress.kubernetes.io/certificate-arn: <CERTIFICATE_ARN>
+  alb.ingress.kubernetes.io/backend-protocol: HTTPS
+  ```
 
-The `values.yaml` JDBC URLs reference the database by the Kubernetes service name `mysql:3306`. Ensure the service name matches your MySQL deployment before proceeding.
+  If the `group.name` annotation is not used, multiple loadbalancers will be created for each ingress resource. Furthermore, if the `certificate-arn` is not specified, the controller will look for available certificated in ACM based on the Common Name (CN) of the certificate. Additionally, including health-check related annotation might be useful to avoid any issues with the product throwing errors due to random probles.
 
----
+  ```
+  alb.ingress.kubernetes.io/healthcheck-protocol: 'HTTPS'
+  alb.ingress.kubernetes.io/healthcheck-port: '9443'
+  alb.ingress.kubernetes.io/healthcheck-path: /services/Version
+  alb.ingress.kubernetes.io/healthcheck-interval-seconds: '10'
+  alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+  alb.ingress.kubernetes.io/success-codes: '200'
+  alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+  alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+  ```
 
-### Step 3: Create the Keystore Secret
+  Please refer the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations/) to get more information on these annotations and other annotations that might be useful.
 
-APIM requires a Kubernetes secret containing the JKS keystore files. The keystore files are stored in `helm-apim/apim-secrets/`. The chart references this secret as `apim-keystore-secret` by default (configurable via `wso2.apim.configurations.security.jksSecretName`).
+- If you are enabling secure vault configurations for the product, you need to configure the secret manager service of the respective cloud provider. The default deployment uses the symmetric-key based secret resolution flow, so `secretEncryptionKey` must be available in the cloud secret store for the runtime to resolve encrypted secrets, including an encrypted internal encryption key. If you explicitly use a keystore-based setup instead, make the `internalKeystorePassword` available through the cloud secret store.
 
-```bash
-cd helm-apim/
+    For AWS, you need to deploy the `secrets-store-csi-driver-provider` and create the necessary IAM policies, OIDC providers, and IAM service accounts. Please refer the [documentation](https://github.com/aws/secrets-store-csi-driver-provider-aws) for more information and steps to follow.
 
-oc create secret generic apim-keystore-secret \
-  --from-file=wso2carbon.jks=apim-secrets/wso2carbon.jks \
-  --from-file=client-truststore.jks=apim-secrets/client-truststore.jks \
-  -n <namespace>
-```
+- If you are enabling solr indexing in your setup, you need to mount the carbon database and solr indexed data to a persistent storage location.
 
-Verify both keys are present:
+    For AWS, the recommended solution would be EFS. To connect your cluster with EFS, you need to setup the `aws-efs-cs--driver` in your cluster. Refer to the [documentation](https://github.com/kubernetes-sigs/aws-efs-csi-driver/tree/master) to setup the driver and set necessary permissions (policy) to the IAM service account. Make sure that you have created the necessary access points in EFS with the required user permissions. The UIDs should match those of the user inside the container.
 
-```bash
-oc get secret apim-keystore-secret -n <namespace> -o jsonpath='{.data}' | tr ',' '\n'
-```
-
-You should see `wso2carbon.jks` and `client-truststore.jks` with base64-encoded values.
-
-> If the secret already exists but is empty (e.g. from a previous failed install), replace it:
-> ```bash
-> oc create secret generic apim-keystore-secret \
->   --from-file=wso2carbon.jks=apim-secrets/wso2carbon.jks \
->   --from-file=client-truststore.jks=apim-secrets/client-truststore.jks \
->   -n <namespace> \
->   --dry-run=client -o yaml | oc replace -f -
-> ```
-
----
-
-### Step 4: Install the Helm Chart
-
-Create the namespace if it doesn't exist:
-
-```bash
-oc create namespace <namespace>
-```
-
-Install or upgrade the chart from the `all-in-one/` directory:
-
-```bash
-cd helm-apim/all-in-one/
-helm upgrade --install apim . -n <namespace> -f values.yaml
-```
-
-Watch the pod come up:
-
-```bash
-oc get pods -n <namespace> -w
-```
-
-> `startupProbe.initialDelaySeconds` defaults to `240` seconds — the pod takes 4+ minutes before it is marked ready. This is expected.
-
----
-
-### Step 5: Verify the Deployment
-
-Once the pod is running, the following endpoints are available (hostnames are configured under `kubernetes.route` in `values.yaml`):
-
-| Console | URL |
-|---|---|
-| Publisher | `https://<management-hostname>/publisher` |
-| DevPortal | `https://<management-hostname>/devportal` |
-| Admin Portal | `https://<management-hostname>/admin` |
-| Carbon Management | `https://<management-hostname>/carbon` |
-| Gateway | `https://<gateway-hostname>` |
-| Websocket | `https://<websocket-hostname>` |
-| Websub | `https://<websub-hostname>` |
-
-Admin credentials are set in `values.yaml` under `wso2.apim.configurations.adminUsername` and `adminPassword`.
-
----
-
-### Step 6: Expose a Backend API
-
-This example demonstrates publishing an API backed by a service running in the same cluster (e.g. WSO2 Micro Integrator).
-
-**Find your backend service name:**
-
-```bash
-oc get service -n <namespace>
-```
-
-Always use the Kubernetes **service name** as the endpoint base URL rather than the ClusterIP, so it remains stable across restarts.
-
-**Create the API in Publisher:**
-
-1. Log in to the Publisher portal.
-2. Click **Create API → REST API → Create from Scratch**.
-3. Fill in the details:
-   - **Name:** e.g. `Hello`
-   - **Context:** e.g. `/hello`
-   - **Version:** e.g. `v1`
-   - **Endpoint:** base URL only — e.g. `http://<service-name>:8290`
-4. Select **Universal Gateway** as the gateway type.
-5. Under **Resources**, define the resource paths — e.g. `GET /hello`.
-6. Click **Create & Publish**.
-
-> A `405 Method Not Allowed` shown during the endpoint connectivity check is expected and harmless — it means APIM reached the backend. The probe hits the root path with an unsupported method.
-
-> Do **not** append the resource path to the endpoint URL. Set only the base URL in the Endpoint field and define paths under Resources. Appending the path to the endpoint causes double-path forwarding and returns `404` at the gateway.
-
-**Test the API:**
-
-```
-GET https://<gateway-hostname>/<context>/<version>/<resource>
-Authorization: Bearer <token>
-```
-
-Generate a test token from the DevPortal by subscribing to the API and creating application keys.
-
----
-
-## Deployment Patterns
-
-The `helm-apim/docs/` directory contains reference configurations for the supported deployment patterns:
-
-| Pattern | Description | Chart |
-|---|---|---|
-| `am-pattern-0-all-in-one` | Single all-in-one node | `all-in-one/` |
-| `am-pattern-1-all-in-one-HA` | All-in-one with HA (2 replicas) | `all-in-one/` |
-| `am-pattern-2-all-in-one_GW` | All-in-one + separate Gateway | `all-in-one/` + `distributed/gateway/` |
-| `am-pattern-3-ACP_TM_GW` | Control Plane + Traffic Manager + Gateway | `distributed/` |
-| `am-pattern-4-ACP_TM_GW_KM` | Above + external Key Manager | `distributed/` |
-| `am-pattern-5-all-in-one_GW_KM` | All-in-one + Gateway + Key Manager | `all-in-one/` + `distributed/` |
-
-See the README in each pattern directory under `docs/` for pattern-specific values.
-
----
+- Make sure the RDS is up and running. You need to create the relevant databases in the RDS system before deploying the chart. Also, it is recommended to include the database JDBC driver in your Docker image so that APIM can connect to the databases without any issues. If you are not adding the driver to the image itself, you might have to modify the helm charts and mount the driver to the deplyoments.
 
 ## Sample Configurations
 
-### AWS (EKS)
+The helm charts inlude cloud provider specific blocks. The parameters in those blocks can be used to configure services that are specific for each cloud provider.
 
 ```yaml
 wso2:
@@ -237,16 +92,18 @@ aws:
     directoryPerms: "0777"
     fileSystemId: "fs-12345678"
     accessPoints:
-      carbonDb: "fsap-12345678"
-      solr: "fsap-12345678"
-  region: "<aws-region>"
+        carbonDb: "fsap-12345678"
+        solr: "fsap-12345678"
+  region: ""
   secretsManager:
     secretProviderClass: "wso2am-am-secret-provider-class"
     secretIdentifiers:
       secretEncryptionKey:
         secretName: "<secret_name>"
         secretKey: "<secret_key>"
-  serviceAccountName: "<k8s-service-account>"
+  serviceAccountName: ""
 ```
 
-When `aws.enabled` is `true`, the chart assumes an EKS deployment and enables EFS-backed persistent volumes and AWS Secrets Manager integration. Refer to the [all-in-one README](all-in-one/README.md) for the full parameter reference.
+The symmetric internal encryption key shown above is mandatory and is used by API Manager for internal encryption purposes. The `secretEncryptionKey` entry is a separate key reference used by the default symmetric-key based secure-vault flow. If you use a keystore-based setup instead, configure `internalKeystorePassword` in the cloud secret store in addition to the relevant keystore configuration.
+
+For example, if the enabled attribute is set to true under aws, then it is assumed that the helm charts will be deployed in EKS and will be using other AWS services. Refer the [README](all-in-one/README.md) of the charts to get more information on the parameters.

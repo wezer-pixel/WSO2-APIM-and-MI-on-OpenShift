@@ -63,8 +63,10 @@ wso2:
     # -- (list) Ingress annotations
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
     # -- K8s TLS secret for configured hostname
-    tlsSecret: ""
+    tlsSecret: "wso2-shared-wildcard-tls"
     ratelimit:
       # -- Ingress rate limit
       enabled: false
@@ -82,14 +84,14 @@ wso2:
         enabled: false
         # -- Seccomp profile type
         type: RuntimeDefault
-      enableRunAsUser: true
+      enableRunAsUser: false
       # -- The UID to run the entrypoint of the container process
-      runAsUser: "802"
+      #runAsUser: "802"
       seLinux:
         enabled: false
         level: "s0:c26,c0"
     # -- Hostname of the ICP deployment
-    hostname: "icp.apps.rm2.thpm.p1.openshiftapps.com"
+    hostname: "wso2icp-sybylcloud.internal-lab.com"
     # -- Build version of the ICP
     BuildVersion: "1.0.0"
     # -- K8s secret name which contains JKS files
@@ -174,7 +176,7 @@ wso2:
     # -- Set UNIX permissions over the startup scripts
     configMaps:
       entryPoint:
-        defaultMode: "0407"
+        defaultMode: 0755
 
   # Integration Control Plane (ICP) product configurations
   config:

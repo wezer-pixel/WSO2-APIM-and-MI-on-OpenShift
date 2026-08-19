@@ -1,6 +1,9 @@
 [server_config]
 port = {{ .Values.wso2.config.serverPort }}
 
+[transport.https.properties]
+proxyPort = 443
+
 [heartbeat_config]
 pool_size = {{ .Values.wso2.config.heartbeatPoolSize }}
 

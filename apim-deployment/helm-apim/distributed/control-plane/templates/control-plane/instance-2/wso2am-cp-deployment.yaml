@@ -52,14 +52,15 @@ spec:
                   - {{ template "apim-helm-cp.fullname" . }}
               topologyKey: "topology.kubernetes.io/zone"
             weight: 100
-      {{- if .Values.wso2.apim.secureVaultEnabled }} 
       {{- if .Values.aws.enabled }}
-      serviceAccount: {{ .Values.aws.serviceAccountName }}
+      serviceAccountName: {{ .Values.aws.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.aws.automountServiceAccountToken }}
       {{- else if .Values.gcp.enabled }}
-      serviceAccount: {{ .Values.gcp.serviceAccountName }}
+      serviceAccountName: {{ .Values.gcp.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.gcp.automountServiceAccountToken }}
       {{- else if .Values.azure.enabled }}
-      serviceAccount: {{ .Values.azure.serviceAccountName }}
-      {{- end }}
+      serviceAccountName: {{ .Values.azure.serviceAccountName }}
+      automountServiceAccountToken: {{ .Values.azure.automountServiceAccountToken }}
       {{- end }}
       securityContext:
         seccompProfile:
@@ -69,11 +70,21 @@ spec:
           {{- end }}
       {{- if and .Values.wso2.deployment.image.imagePullSecrets.enabled }}
       imagePullSecrets:
+      {{- if .Values.wso2.deployment.image.imagePullSecrets.name }}
+      - name: {{ .Values.wso2.deployment.image.imagePullSecrets.name }}
+      {{- else }}
       - name: {{ template "apim-helm-cp.fullname" . }}-docker-registry-auth
+      {{- end }}
       {{- end }}
       containers:
       - name: wso2am-control-plane
+        {{- if .Values.wso2.deployment.image.digest }}
         image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}@{{ .Values.wso2.deployment.image.digest }}
+        {{- else if .Values.wso2.deployment.image.tag }}
+        image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}:{{ .Values.wso2.deployment.image.tag }}
+        {{- else }}
+        image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}
+        {{- end }}
         imagePullPolicy: {{ .Values.wso2.deployment.image.imagePullPolicy }}
         env:
         - name: PROFILE_NAME
@@ -205,6 +216,7 @@ spec:
             cpu: {{ .Values.wso2.deployment.resources.limits.cpu }}
         securityContext:
           runAsUser: {{ .Values.kubernetes.securityContext.runAsUser }}
+          runAsGroup: {{ .Values.kubernetes.securityContext.runAsGroup }}
           allowPrivilegeEscalation: false
           runAsNonRoot: true
           {{- if .Values.kubernetes.securityContext.seLinux.enabled }}
@@ -285,6 +297,10 @@ spec:
         - name: wso2am-control-plane-solr
           mountPath: /home/wso2carbon/solr/indexed-data
         {{ end }}
+        {{- if .Values.kubernetes.openshift.enabled }}
+        - name: wso2am-security-dir
+          mountPath: /home/wso2carbon/tmp-security
+        {{- end }}
       {{- if .Values.wso2.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.wso2.deployment.nodeSelector | nindent 8 }}
@@ -357,4 +373,8 @@ spec:
         persistentVolumeClaim:
           claimName: {{ template "apim-helm-cp.fullname" . }}-solr-indexed-data-2
       {{ end }}
+      {{- if .Values.kubernetes.openshift.enabled }}
+      - name: wso2am-security-dir
+        emptyDir: {}
+      {{- end }}
 {{- end }}

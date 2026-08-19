@@ -2,6 +2,9 @@
 hostname = {{ .Values.wso2.deployment.hostname | quote }}
 offset  = {{ .Values.wso2.config.portOffset }}
 
+[transport.https.properties]
+proxyPort = 443
+
 [internal_apis.file_user_store]
 enable = {{ .Values.wso2.config.userstore.file.enabled }}
 

@@ -10,7 +10,7 @@ aws:
   region: ""
   storage:
     capacity: "1Gi"
-    storageClass: "efs-sc"
+    storageClass: "nfs-sc"
     fileSystemId: ""        # ← leave empty, created PVC manually
     cAppAccessPoint: ""     # ← leave empty, created PVC manually
   # AWS Secret Manager configurations
@@ -60,8 +60,10 @@ wso2:
     # -- (list) Ingress annotations
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
     # -- K8s TLS secret for configured hostname
-    tlsSecret: ""
+    tlsSecret: "wso2-shared-wildcard-tls"
     ratelimit:
       # -- Ingress rate limit
       enabled: false
@@ -109,11 +111,11 @@ wso2:
       primary:
         # -- Primary truststore file name
         fileName: "client-truststore.jks"
-        # -- Primary truststore password
+        # -- Primary truststore password - https://apim-wso2am-all-in-one-am-service.wso2-dev.svc.cluster.local:9443
         password: "wso2carbon"
     serviceCatalog:
       enabled: true
-      apimHost: "https://apim-wso2am-all-in-one-am-service:9443"
+      apimHost: "https://apim-wso2am-all-in-one-am-service.wso2-dev.svc.cluster.local:9763"
       username: "admin"
       password: "admin"
     synapseProperties:
@@ -121,7 +123,12 @@ wso2:
         
     icp:
       # -- ICP URL
-      url: ""
+      url: "https://cloud-icp:9743/dashboard/api/"
+      groupId: "default"
+      nodeId: "cloud-mi-node-1"
+      managementHostname: "cloud-mi"
+      managementPort: 9164
+      heartbeatInterval: 5
   deployment:
     securityContext:
       # -- Enable/Disable AppArmor (https://kubernetes.io/docs/tutorials/security/apparmor/)
@@ -142,7 +149,7 @@ wso2:
         enabled: false
         level: "s0:c26,c0"
     # -- Hostname of the Micro Integrator deployment
-    hostname: "mi.apps.rm2.thpm.p1.openshiftapps.com"
+    hostname: "wso2mi-sybylcloud.internal-lab.com"
     # -- Build version of the Micro Integrator
     BuildVersion: "4.4.0"
     # -- K8s secret name which contains JKS files
@@ -235,11 +242,11 @@ wso2:
     # -- (list) Environment variables for the Micro integrator deployment
     envs:
     # JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Djavax.net.ssl.trustStoreType=JKS -Dtrust.all.certs=true"
-      JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Dhttps.protocols=TLSv1.2 -Dcom.sun.jndi.ldap.object.trustURLCodebase=false -Djavax.net.debug=none -Djdk.internal.httpclient.disableHostnameVerification=true"
+      JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Dhttps.protocols=TLSv1.2 -Dtrust.all.certs=true -Djdk.internal.httpclient.disableHostnameVerification=true"
     # JAVA_OPTS: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Djavax.net.ssl.trustStoreType=JKS -Dtrust.all.certs=true"
     # wso2_oh_sample_baseUrl: "http://localhost:8290/services/odata"
     # currency_service_url: "https://dev-tools.wso2.com/gs/helpers/v1.0"
-
+    
     # Configure synapse testing
     synapseTest:
       # -- Enable/Disable synapse testing

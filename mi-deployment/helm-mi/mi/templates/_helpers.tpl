@@ -66,6 +66,8 @@ Create chart name and version as used by the chart label.
 {{- .Values.aws.storage.capacity -}}
 {{- else if eq "gcp" .Values.provider }}
 {{- .Values.gcp.storage.capacity -}}
+{{- else }}
+{{- "1Gi" -}}
 {{- end }}
 {{- end -}}
 
@@ -74,6 +76,8 @@ Create chart name and version as used by the chart label.
 {{- .Values.aws.storage.storageClass -}}
 {{- else if eq "gcp" .Values.provider }}
 {{- .Values.gcp.storage.storageClass -}}
+{{- else }}
+{{- "local-path" -}}
 {{- end }}
 {{- end -}}
 

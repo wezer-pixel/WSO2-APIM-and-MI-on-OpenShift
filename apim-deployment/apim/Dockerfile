@@ -1,7 +1,7 @@
-FROM docker.io/wso2/wso2am:4.5.0
+FROM docker.io/wso2/wso2am:4.7.0
 
 ENV USER_HOME=/home/wso2carbon
-ENV WSO2_SERVER_HOME=/home/wso2carbon/wso2am-4.5.0
+ENV WSO2_SERVER_HOME=/home/wso2carbon/wso2am-4.7.0
 
 USER root
 

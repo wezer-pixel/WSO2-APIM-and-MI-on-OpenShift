@@ -38,4 +38,5 @@ data:
     {{ template "cp-secret-to-password-tmp" . }}
     {{- end }}
     # start WSO2 server
-    sh ${WSO2_SERVER_HOME}/bin/dashboard.sh "$@"
+    export SHELL=/bin/bash
+    exec /bin/bash ${WSO2_SERVER_HOME}/bin/dashboard.sh "$@"

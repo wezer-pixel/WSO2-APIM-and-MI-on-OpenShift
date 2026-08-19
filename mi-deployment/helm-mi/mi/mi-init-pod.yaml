@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: mi-init-pod
-  namespace: jerry-juma-dev
+  namespace: wso2-dev
 spec:
   containers:
   - name: init
