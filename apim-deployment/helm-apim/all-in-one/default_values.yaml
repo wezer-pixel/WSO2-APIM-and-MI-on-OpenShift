@@ -780,20 +780,20 @@ wso2:
       # Resource configurations defined here are applicable for all API Manager product profiles of this deployment
       requests:
         # -- Memory request for API Manager
-        memory: "2Gi"
+        memory: "3Gi"
         # -- CPU request for API Manager
-        cpu: "2000m"
+        cpu: "1000m"
       limits:
         # -- Memory limit for API Manager
-        memory: "3Gi"
+        memory: "4Gi"
         # -- CPU limit for API Manager
-        cpu: "3000m"
+        cpu: "1500m"
       jvm:
         memory:
           # -- JVM heap memory Xms
-          xms: "2048m"
+          xms: "2560m"
           # -- JVM heap memory Xmx
-          xmx: "2048m"
+          xmx: "2560m"
 
     # Kubernetes Probes     
     # Indicates whether the container starting
