@@ -168,7 +168,7 @@ wso2:
     configurations:
       encryption:
         # -- Symmetric encryption key shared by all nodes. This must be set explicitly and must be the same across all nodes before first startup.
-        key: ""
+        key: "C/3DjncXGcoOnMD2MildYR1KlWX14DmOVqtM9nhzLCQ="
         # -- Symmetric cipher transformation. AES/GCM/NoPadding is used as the symmetric cipher transformation.
         cipherTransformation: "AES/GCM/NoPadding"
         # -- Internal crypto provider implementation used for symmetric encryption.
@@ -184,25 +184,39 @@ wso2:
         type: "database_unique_id"
         # -- User store properties
         properties:
-          key: value
+          # key: value
+          TenantManager: "org.wso2.carbon.user.core.tenant.JDBCTenantManager"
+          data_source: "WSO2USER_DB"
+          Disabled: false
+          ReadOnly: false
+          ReadGroups: true
+          WriteGroups: false
+          IsEmailUserName: false
+          PasswordDigest: "SHA-256"
+          StoreSaltedPassword: true
+          UserNameUniqueAcrossTenants: false
+          UserRolesCacheEnabled: true
+          DomainCalculation: "default"
+          SCIMEnabled: false
+          UserCoreCacheTimeOut: 5
       # -- Super admin username
-      adminUsername: ""
+      adminUsername: "admin"
       # -- Super admin password
-      adminPassword: ""
+      adminPassword: "admin"
 
       security:
         # -- Kubernetes secret containing the keystores and truststore
-        jksSecretName: "apim-keystore-secret"
+        jksSecretName: "mi-keystores"
         # -- Existing secret containing the passwords for the keystores
         jksExistingSecret:
-          secretName: "" # e.g apim-jks-secret
-          primaryKeystorePasswordKey: ""
-          primaryKeystoreKeyPasswordKey: ""
-          tlsKeystorePasswordKey: ""
-          tlsKeystoreKeyPasswordKey: ""
-          internalKeystorePasswordKey: ""
-          internalKeystoreKeyPasswordKey: ""
-          truststorePasswordKey: ""
+          secretName: "apim-jks-secret"
+          primaryKeystorePasswordKey: "keystore-password"
+          primaryKeystoreKeyPasswordKey: "key-password"
+          tlsKeystorePasswordKey: "keystore-password"
+          tlsKeystoreKeyPasswordKey: "key-password"
+          internalKeystorePasswordKey: "keystore-password"
+          internalKeystoreKeyPasswordKey: "key-password"
+          truststorePasswordKey: "truststore-password"
         keystores:
           primary:
             # -- Primary keystore enabled
@@ -212,9 +226,9 @@ wso2:
             # -- Primary keystore alias
             alias: "wso2carbon"
             # -- Primary keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Primary keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           tls:
             # -- TLS keystore enabled
             enabled: true
@@ -223,9 +237,9 @@ wso2:
             # -- TLS keystore alias
             alias: "wso2carbon"
             # -- TLS keystore password
-            password: ""
+            password: "wso2carbon"
             # -- TLS keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           internal:
             # -- Internal keystore enabled
             enabled: false
@@ -234,14 +248,14 @@ wso2:
             # -- Internal keystore alias
             alias: "wso2carbon"
             # -- Internal keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Internal keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
         truststore:
           # -- Truststore name
           name: "client-truststore.jks"
           # -- Truststore password
-          password: ""
+          password: "wso2carbon"
 
       km:
         # -- Key manager service name if default Resident KM is used
@@ -328,15 +342,15 @@ wso2:
         username: ""
         password: ""
       # -- Container registry hostname
-      registry: ""
+      registry: "docker.io"
       # -- Azure ACR repository name consisting the image
-      repository: ""
+      repository: "wezer/wso2am-acp-custom"
       # -- Docker image tag
-      tag: ""
+      tag: "1.0.0"
       # -- Docker image digest
-      digest: ""
+      digest: "sha256:88c4288b8ae09977e1f94f73279fd06a38acf426f9f94645ce320da7b9b2f7f5"
       # -- Refer to the Kubernetes documentation on updating images (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
 
     resources:
       # These are the resource recommendations for running WSO2 API Management product profiles with profile optimization

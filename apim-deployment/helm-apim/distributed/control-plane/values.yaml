@@ -239,7 +239,7 @@ kubernetes:
     # -- Backend TLS Policy for HTTPS backend connections
     backendTLSPolicy:
       # -- Enable BackendTLSPolicy
-      enabled: true
+      enabled: false
       # -- CA certificate ConfigMap name for backend TLS verification
       caCertificateConfigMap: "wso2-shared-wildcard-tls"
       # -- Backend hostname for TLS verification
@@ -668,27 +668,27 @@ wso2:
       # -- Container registry hostname
       registry: "docker.io"
       # -- Azure ACR repository name consisting the image
-      repository: ""
+      repository: "wezer/wso2am-acp-custom"
       # -- Docker image tag
-      tag: ""
+      tag: "1.0.0"
       # -- Docker image digest
-      digest: ""
+      digest: "sha256:88c4288b8ae09977e1f94f73279fd06a38acf426f9f94645ce320da7b9b2f7f5"
       # -- Refer to the Kubernetes documentation on updating images (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
 
     resources:
       # These are the resource recommendations for running WSO2 API Management product profiles with profile optimization
       # Resource configurations defined here are applicable for all API Manager product profiles of this deployment
       requests:
         # -- Memory request for API Manager
-        memory: "2Gi"
+        memory: "1Gi"
         # -- CPU request for API Manager
-        cpu: "2000m"
+        cpu: "1000m"
       limits:
         # -- Memory limit for API Manager
-        memory: "3Gi"
+        memory: "2Gi"
         # -- CPU limit for API Manager
-        cpu: "3000m"
+        cpu: "2000m"
       jvm:
         memory:
           # -- JVM heap memory Xms
@@ -745,7 +745,8 @@ wso2:
     #   envs:
     #     MY_CUSTOM_VAR: "my-value"
     #     ANOTHER_VAR: "another-value"
-    envs: {}
+    envs:
+      JAVA_OPTS: "-Dorg.opensaml.httpclient.https.disableHostnameVerification=true -Dhttpclient.hostnameVerifier=AllowAll -Djdk.internal.httpclient.disableHostnameVerification=true"
 
     # -- Enable high availability for traffic manager. If this is enabled, two traffic manager instances will be deployed.
     # This is not relavant to HA in Kubernetes. Multiple replicas of the same instance will not count as HA for TM.
