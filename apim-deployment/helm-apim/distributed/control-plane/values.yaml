@@ -173,7 +173,7 @@ kubernetes:
   ingressClass: "nginx"
   ingress:
     # -- Kubernetes secret created for Ingress TLS
-    tlsSecret: ""
+    tlsSecret: "wso2-shared-wildcard-tls"
     ratelimit:
       # -- Ingress rate limit
       enabled: false
@@ -184,8 +184,8 @@ kubernetes:
     controlPlane:
       # -- Enable ingress for Control Plane
       enabled: false
-      # -- Ingress hostname
-      hostname: "am.wso2.com"
+        # -- Ingress hostname
+      hostname: "apim-cp-wso2am-distributed-sybylcloud.internal-lab.com"
       # -- Ingress annotations
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -224,14 +224,14 @@ kubernetes:
     enabled: true
     # -- Name of the externally-created Gateway resource that HTTPRoutes will reference (e.g., istio, nginx, contour, envoy-gateway, gke-l7-global-external-managed)
     # This Gateway must exist in the same namespace before installing the chart
-    gatewayName: ""
+    gatewayName: "envoy-gateway"
     # -- Create CA certificate ConfigMap for BackendTLSPolicy
     defaultConfigMapCreation: false
     controlPlane:
       # -- Enable HTTPRoute for Control Plane
       enabled: true
       # -- Hostname for Control Plane
-      hostname: "am.wso2.com"
+      hostname: "apim-cp-wso2am-distributed-sybylcloud.internal-lab.com"
       # -- HTTPRoute annotations
       annotations: {}
       # -- HTTPRoute filters (optional)
@@ -239,16 +239,16 @@ kubernetes:
     # -- Backend TLS Policy for HTTPS backend connections
     backendTLSPolicy:
       # -- Enable BackendTLSPolicy
-      enabled: false
+      enabled: true
       # -- CA certificate ConfigMap name for backend TLS verification
-      caCertificateConfigMap: ""
+      caCertificateConfigMap: "wso2-shared-wildcard-tls"
       # -- Backend hostname for TLS verification
-      hostname: ""
+      hostname: "apim-cp-wso2am-distributed-sybylcloud.internal-lab.com"
     # -- Backend Traffic Policy for cookie-based session affinity
     # Requires Envoy Gateway controller support for BackendTrafficPolicy
     backendTrafficPolicy:
       # -- Enable BackendTrafficPolicy
-      enabled: false
+      enabled: true
       cookie:
         # -- Cookie name used for sticky sessions
         name: "WSO2_CP_STICKY_SESSION"
@@ -273,7 +273,7 @@ kubernetes:
   # -- Set UNIX permissions over the executable scripts
   configMaps:
     scripts:
-      defaultMode: "0407"
+      defaultMode: "0755" 
 
   # -- Mount extra volumes to the deployment pods, e.g to mount secrets
   # extraVolumeMounts:
@@ -319,7 +319,7 @@ wso2:
     configurations:
       encryption:
         # -- Symmetric encryption key shared by all nodes. This must be set explicitly and must be the same across all nodes before first startup.
-        key: ""
+        key: "C/3DjncXGcoOnMD2MildYR1KlWX14DmOVqtM9nhzLCQ="
         # -- Symmetric cipher transformation. AES/GCM/NoPadding is used as the symmetric cipher transformation.
         cipherTransformation: "AES/GCM/NoPadding"
         # -- Internal crypto provider implementation used for symmetric encryption.
@@ -338,29 +338,43 @@ wso2:
         type: "database_unique_id"
         # -- User store properties
         properties:
-          key: value
+          # key: value
+          TenantManager: "org.wso2.carbon.user.core.tenant.JDBCTenantManager"
+          data_source: "WSO2USER_DB"
+          Disabled: false
+          ReadOnly: false
+          ReadGroups: true
+          WriteGroups: false
+          IsEmailUserName: false
+          PasswordDigest: "SHA-256"
+          StoreSaltedPassword: true
+          UserNameUniqueAcrossTenants: false
+          UserRolesCacheEnabled: true
+          DomainCalculation: "default"
+          SCIMEnabled: false
+          UserCoreCacheTimeOut: 5
       # -- Super admin username
-      adminUsername: ""
+      adminUsername: "admin"
       # -- Super admin password
-      adminPassword: ""
+      adminPassword: "admin"
       # -- Read password from secret
       adminPasswordExistingSecret:
         secretName: "" # e.g apim-admin-secret
         secretKey: ""  # e.g adminpassword
       databases:
         # -- Database type. eg: mysql, oracle, mssql, postgres
-        type: ""
+        type: "postgres"
         jdbc:
           # -- JDBC driver class name
-          driver: ""
+          driver: "org.postgresql.Driver"
         # -- APIM AM_DB configurations.
         apim_db:
           # -- APIM AM_DB URL
-          url: ""
+          url: "jdbc:postgresql://172.24.50.3:5432/apim_db"
           # -- APIM AM_DB username
-          username: ""
+          username: "apim"
           # -- APIM AM_DB password
-          password: ""
+          password: "apim123!"
           # -- Read password from secret
           passwordExistingSecret:
             secretName: "" # e.g apim-db-secret
@@ -377,11 +391,11 @@ wso2:
         # -- APIM SharedDB configurations.
         shared_db:
           # -- APIM SharedDB URL
-          url: ""
+          url: "jdbc:postgresql://172.24.50.3:5432/shared_db"
           # -- APIM SharedDB username
-          username: ""
+          username: "apim"
           # -- APIM SharedDB password
-          password: ""
+          password: "apim123!"
           # -- Read password from secret
           passwordExistingSecret:
             secretName: "" # e.g apim-shared-db-secret
@@ -423,17 +437,17 @@ wso2:
 
       security:
         # -- Kubernetes secret containing the keystores and truststore
-        jksSecretName: "apim-keystore-secret"
+        jksSecretName: "mi-keystores"
         # -- Existing secret containing the passwords for the keystores
         jksExistingSecret:
-          secretName: "" # e.g apim-jks-secret
-          primaryKeystorePasswordKey: ""
-          primaryKeystoreKeyPasswordKey: ""
-          tlsKeystorePasswordKey: ""
-          tlsKeystoreKeyPasswordKey: ""
-          internalKeystorePasswordKey: ""
-          internalKeystoreKeyPasswordKey: ""
-          truststorePasswordKey: ""
+          secretName: "apim-jks-secret"
+          primaryKeystorePasswordKey: "keystore-password"
+          primaryKeystoreKeyPasswordKey: "key-password"
+          tlsKeystorePasswordKey: "keystore-password"
+          tlsKeystoreKeyPasswordKey: "key-password"
+          internalKeystorePasswordKey: "keystore-password"
+          internalKeystoreKeyPasswordKey: "key-password"
+          truststorePasswordKey: "truststore-password"
         keystores:
           primary:
             # -- Primary keystore enabled
@@ -443,9 +457,9 @@ wso2:
             # -- Primary keystore alias
             alias: "wso2carbon"
             # -- Primary keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Primary keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           tls:
             # -- TLS keystore enabled
             enabled: true
@@ -454,9 +468,9 @@ wso2:
             # -- TLS keystore alias
             alias: "wso2carbon"
             # -- TLS keystore password
-            password: ""
+            password: "wso2carbon"
             # -- TLS keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           internal:
             # -- Internal keystore enabled
             enabled: false
@@ -465,14 +479,14 @@ wso2:
             # -- Internal keystore alias
             alias: "wso2carbon"
             # -- Internal keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Internal keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
         truststore:
           # -- Truststore name
           name: "client-truststore.jks"
           # -- Truststore password
-          password: ""
+          password: "wso2carbon"
       
       gateway:
         # -- APIM Gateway environments
@@ -487,9 +501,9 @@ wso2:
           showAsTokenEndpointUrl: true
           serviceName: "wso2am-gateway-service"
           servicePort: 9443
-          wsHostname: "websocket.wso2.com"
-          httpHostname: "gw.wso2.com"
-          websubHostname: "websub.wso2.com"
+          wsHostname: "distributed-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "distributed-gw-sybylcloud.internal-lab.com"
+          websubHostname: "distributed-websub-sybylcloud.internal-lab.com"
 
       gatewayNotification:
         cleanUp:
@@ -652,7 +666,7 @@ wso2:
         username: ""
         password: ""
       # -- Container registry hostname
-      registry: ""
+      registry: "docker.io"
       # -- Azure ACR repository name consisting the image
       repository: ""
       # -- Docker image tag
