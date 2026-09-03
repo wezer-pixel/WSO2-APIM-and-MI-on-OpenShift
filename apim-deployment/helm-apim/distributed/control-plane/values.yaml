@@ -239,9 +239,9 @@ kubernetes:
     # -- Backend TLS Policy for HTTPS backend connections
     backendTLSPolicy:
       # -- Enable BackendTLSPolicy
-      enabled: false
+      enabled: true
       # -- CA certificate ConfigMap name for backend TLS verification
-      caCertificateConfigMap: "wso2-shared-wildcard-tls"
+      caCertificateConfigMap: "wso2-backend-ca"
       # -- Backend hostname for TLS verification
       hostname: "apim-cp-wso2am-distributed-sybylcloud.internal-lab.com"
     # -- Backend Traffic Policy for cookie-based session affinity
@@ -319,7 +319,8 @@ wso2:
     configurations:
       encryption:
         # -- Symmetric encryption key shared by all nodes. This must be set explicitly and must be the same across all nodes before first startup.
-        key: "C/3DjncXGcoOnMD2MildYR1KlWX14DmOVqtM9nhzLCQ="
+        # --OLD KEY: C/3DjncXGcoOnMD2MildYR1KlWX14DmOVqtM9nhzLCQ= 
+        key: "9e8367066d4cd67d023c5bde9efdac81ec597717afb1b94c41dc68be8150a5a4"
         # -- Symmetric cipher transformation. AES/GCM/NoPadding is used as the symmetric cipher transformation.
         cipherTransformation: "AES/GCM/NoPadding"
         # -- Internal crypto provider implementation used for symmetric encryption.
@@ -370,7 +371,7 @@ wso2:
         # -- APIM AM_DB configurations.
         apim_db:
           # -- APIM AM_DB URL
-          url: "jdbc:postgresql://172.24.50.3:5432/apim_db"
+          url: "jdbc:postgresql://172.24.50.3:5432/apim_dist_db"
           # -- APIM AM_DB username
           username: "apim"
           # -- APIM AM_DB password
@@ -391,7 +392,7 @@ wso2:
         # -- APIM SharedDB configurations.
         shared_db:
           # -- APIM SharedDB URL
-          url: "jdbc:postgresql://172.24.50.3:5432/shared_db"
+          url: "jdbc:postgresql://172.24.50.3:5432/shared_dist_db"
           # -- APIM SharedDB username
           username: "apim"
           # -- APIM SharedDB password
@@ -451,9 +452,9 @@ wso2:
         keystores:
           primary:
             # -- Primary keystore enabled
-            enabled: false
+            enabled: true
             # -- Primary keystore name
-            name: "wso2carbon.jks"
+            name: "wso2carbon-signing.jks"
             # -- Primary keystore alias
             alias: "wso2carbon"
             # -- Primary keystore password
@@ -499,7 +500,7 @@ wso2:
           displayInApiConsole: true
           description: "This is a hybrid gateway that handles both production and sandbox token traffic."
           showAsTokenEndpointUrl: true
-          serviceName: "wso2am-gateway-service"
+          serviceName: "ex-gw-wso2am-universal-gw-service"
           servicePort: 9443
           wsHostname: "distributed-websocket-sybylcloud.internal-lab.com"
           httpHostname: "distributed-gw-sybylcloud.internal-lab.com"
@@ -681,12 +682,12 @@ wso2:
       # Resource configurations defined here are applicable for all API Manager product profiles of this deployment
       requests:
         # -- Memory request for API Manager
-        memory: "1Gi"
+        memory: "2Gi"
         # -- CPU request for API Manager
         cpu: "1000m"
       limits:
         # -- Memory limit for API Manager
-        memory: "2Gi"
+        memory: "3Gi"
         # -- CPU limit for API Manager
         cpu: "2000m"
       jvm:
@@ -704,7 +705,7 @@ wso2:
       # -- How often (in seconds) to perform the probe
       periodSeconds: 10
       # -- Minimum consecutive successes for the probe to be considered successful after having failed
-      failureThreshold: 3
+      failureThreshold: 30
     # Indicates whether the container is running
     livenessProbe:
       # -- Number of seconds after the container has started before liveness probes are initiated
