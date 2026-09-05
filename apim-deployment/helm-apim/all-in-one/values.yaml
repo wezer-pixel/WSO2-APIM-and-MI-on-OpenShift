@@ -880,15 +880,15 @@ wso2:
           password: ""
           identityServerBaseUrl: ""
 
-      # -- Add custom configurations to deployment.toml.
+      # -- Add custom configurations to deployment.toml. Addin OpCo Gateway for Public APIXChange
       extraConfigs: |        
         [[apim.gateway.environment]]
-        name = "Micro Integrator"
+        name = "OpCo Gateway"
         type = "hybrid"
         gateway_type = "Regular"
         provider = "wso2"
         display_in_api_console = true
-        description = "Micro Integrator Gateway"
+        description = "OpCo Gateway for Public APIXChange"
         show_as_token_endpoint_url = true
         service_url = "https://cloud-mi:9164/services/"
         username = "${admin.username}"
