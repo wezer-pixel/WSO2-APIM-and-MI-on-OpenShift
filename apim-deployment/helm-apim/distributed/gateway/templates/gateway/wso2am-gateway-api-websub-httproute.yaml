@@ -22,7 +22,7 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.kubernetes.gatewayAPI.gatewayName }}
-    sectionName: websub-https
+    sectionName: {{ .Values.kubernetes.gatewayAPI.websub.sectionName | default "websub-https" | quote }}
   hostnames:
   - {{ .Values.kubernetes.gatewayAPI.websub.hostname }}
   rules:
@@ -32,7 +32,7 @@ spec:
         value: /
     backendRefs:
     - name: {{ template "apim-helm-gw.fullname" . }}-service
-      port: {{ add 8021 (.Values.wso2.apim.portOffset | default 0) }}
+      port: {{ add (.Values.kubernetes.gatewayAPI.websub.backendPort | default 8021) (.Values.wso2.apim.portOffset | default 0) }}
     {{- if .Values.kubernetes.gatewayAPI.websub.filters }}
     filters:
 {{ toYaml .Values.kubernetes.gatewayAPI.websub.filters | indent 4 }}

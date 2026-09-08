@@ -23,7 +23,7 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.kubernetes.gatewayAPI.gatewayName }}
-    sectionName: gateway-https
+    sectionName: {{ .Values.kubernetes.gatewayAPI.gateway.sectionName | default "gateway-https" | quote }}
   hostnames:
   - {{ .Values.kubernetes.gatewayAPI.gateway.hostname }}
   rules:
@@ -33,7 +33,7 @@ spec:
         value: /
     backendRefs:
     - name: {{ template "apim-helm-gw.fullname" . }}-service
-      port: {{ add 8243 (.Values.wso2.apim.portOffset | default 0) }}
+      port: {{ add (.Values.kubernetes.gatewayAPI.gateway.backendPort | default 8243) (.Values.wso2.apim.portOffset | default 0) }}
     {{- if .Values.kubernetes.gatewayAPI.gateway.filters }}
     filters:
 {{ toYaml .Values.kubernetes.gatewayAPI.gateway.filters | indent 4 }}

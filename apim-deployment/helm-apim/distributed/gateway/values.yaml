@@ -186,12 +186,12 @@ kubernetes:
     enabled: true
     # -- Name of the externally-created Gateway resource that HTTPRoutes will reference (e.g., istio, nginx, contour, envoy-gateway, gke-l7-global-external-managed)
     # This Gateway must exist in the same namespace before installing the chart
-    gatewayName: ""
+    gatewayName: "envoy-gateway"
     gateway:
       # -- Enable HTTPRoute for Gateway pass-through
       enabled: true
       # -- Hostname for Gateway pass-through
-      hostname: "gw.wso2.com"
+      hostname: "distributed-gw-sybylcloud.internal-lab.com"
       # -- HTTPRoute annotations
       annotations: {}
       # -- HTTPRoute filters (optional)
@@ -200,7 +200,7 @@ kubernetes:
       # -- Enable HTTPRoute for Websocket
       enabled: true
       # -- Hostname for Websocket
-      hostname: "websocket.wso2.com"
+      hostname: "distributed-websocket-sybylcloud.internal-lab.com"
       # -- HTTPRoute annotations
       annotations: {}
       # -- HTTPRoute filters (optional)
@@ -209,7 +209,7 @@ kubernetes:
       # -- Enable HTTPRoute for Websub
       enabled: true
       # -- Hostname for Websub
-      hostname: "websub.wso2.com"
+      hostname: "distributed-websub-sybylcloud.internal-lab.com"
       # -- HTTPRoute annotations
       annotations: {}
       # -- HTTPRoute filters (optional)
@@ -295,12 +295,12 @@ wso2:
       # -- Maximum number of open files (nofile). Set to meet WSO2 recommended requirements.
       nofile:
     # -- Startup script mount status
-    mountStartupScript: false
+    mountStartupScript: true
     # TOML configurations
     configurations:
       encryption:
         # -- Symmetric encryption key shared by all nodes. This must be set explicitly and must be the same across all nodes before first startup.
-        key: ""
+        key: "9e8367066d4cd67d023c5bde9efdac81ec597717afb1b94c41dc68be8150a5a4"
         # -- Symmetric cipher transformation. AES/GCM/NoPadding is used as the symmetric cipher transformation.
         cipherTransformation: "AES/GCM/NoPadding"
         # -- Internal crypto provider implementation used for symmetric encryption.
@@ -318,9 +318,9 @@ wso2:
         properties:
           key: value
       # -- Super admin username
-      adminUsername: ""
+      adminUsername: "admin"
       # -- Super admin password
-      adminPassword: ""
+      adminPassword: "admin"
 
       # -- APIM AI related configurations
       ai:
@@ -330,29 +330,29 @@ wso2:
 
       security:
         # -- Kubernetes secret containing the keystores and truststore
-        jksSecretName: "apim-keystore-secret"
+        jksSecretName: "mi-keystores"
         # -- Existing secret containing the passwords for the keystores
         jksExistingSecret:
-          secretName: "" # e.g apim-jks-secret
-          primaryKeystorePasswordKey: ""
-          primaryKeystoreKeyPasswordKey: ""
-          tlsKeystorePasswordKey: ""
-          tlsKeystoreKeyPasswordKey: ""
-          internalKeystorePasswordKey: ""
-          internalKeystoreKeyPasswordKey: ""
-          truststorePasswordKey: ""
+          secretName: "apim-jks-secret"
+          primaryKeystorePasswordKey: "keystore-password"
+          primaryKeystoreKeyPasswordKey: "key-password"
+          tlsKeystorePasswordKey: "keystore-password"
+          tlsKeystoreKeyPasswordKey: "key-password"
+          internalKeystorePasswordKey: "keystore-password"
+          internalKeystoreKeyPasswordKey: "key-password"
+          truststorePasswordKey: "truststore-password"
         keystores:
           primary:
             # -- Primary keystore enabled
-            enabled: false
+            enabled: true
             # -- Primary keystore name
-            name: "wso2carbon.jks"
+            name: "wso2carbon-signing.jks"
             # -- Primary keystore alias
             alias: "wso2carbon"
             # -- Primary keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Primary keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           tls:
             # -- TLS keystore enabled
             enabled: true
@@ -361,9 +361,9 @@ wso2:
             # -- TLS keystore alias
             alias: "wso2carbon"
             # -- TLS keystore password
-            password: ""
+            password: "wso2carbon"
             # -- TLS keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           internal:
             # -- Internal keystore enabled
             enabled: false
@@ -372,18 +372,18 @@ wso2:
             # -- Internal keystore alias
             alias: "wso2carbon"
             # -- Internal keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Internal keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
         truststore:
           # -- Truststore name
           name: "client-truststore.jks"
           # -- Truststore password
-          password: ""
+          password: "wso2carbon"
 
       km:
         # -- Key manager service name if default Resident KM is used
-        serviceUrl: "wso2am-cp-service"
+        serviceUrl: "wso2am-cp-wso2am-acp-service"
         # -- Key Manager service port
         servicePort: 9443        
 
@@ -447,14 +447,14 @@ wso2:
       throttling:
         # -- Traffic manager loadbalancer service url for throttling.
         # If the traffic manager is separated from control-plane, all urls should be pointed to traffic-manager ones.
-        serviceUrl: "wso2am-cp-service"
+        serviceUrl: "wso2am-cp-wso2am-acp-service"
         portOffset: 0
         # -- Port of the service URL
         servicePort: 9443
         # -- Traffic manager service urls. You only need to define one if the TM is not in HA.
         urls:
-          - "wso2am-cp-1-service"
-          - "wso2am-cp-2-service"
+          - "wso2am-cp-wso2am-acp-1-service"
+          - "wso2am-cp-wso2am-acp-2-service"
         # -- Enable unlimited throttling tier
         unlimitedTier: true
         # -- Enable header based throttling
@@ -472,15 +472,15 @@ wso2:
       eventhub:
         # -- Event hub (control plane) enabled.
         # This should be enabled if the traffic manager is separated from the control-plane.
-        enabled: false
+        enabled: true
         # -- Event hub (control plane) loadbalancer service url
-        serviceUrl: "wso2am-cp-service"
+        serviceUrl: "wso2am-cp-wso2am-acp-service"
         # -- Event hub (control plane) service port
         servicePort: 9443
         # -- Event hub service urls
         urls:
-          - "wso2am-cp-1-service"
-          - "wso2am-cp-2-service"
+          - "wso2am-cp-wso2am-acp-1-service"
+          - "wso2am-cp-wso2am-acp-2-service"
         
       # APIM cache related configurations
       cache:
@@ -560,7 +560,7 @@ wso2:
       transactionCounter:
         enabled: false
         serverId: "Gateway1"
-        serverUrl: "https://apim-acp-wso2am-acp-service:9443/internal/data/v1/transaction-records"
+        serverUrl: "https://wso2am-cp-wso2am-acp-service:9443/internal/data/v1/transaction-records"
       
       # -- Add custom configurations to deployment.toml.
       extraConfigs: 
@@ -577,29 +577,29 @@ wso2:
         username: ""
         password: ""
       # -- Container registry hostname
-      registry: ""
+      registry: "docker.io"
       # -- Azure ACR repository name consisting the image
-      repository: ""
+      repository: "wezer/wso2am-gw-custom"
       # -- Docker image tag
-      tag: ""
+      tag: "1.0.0"
       # -- Docker image digest
-      digest: ""
+      digest: "sha256:23a7be6ebe7801fb2020de4fbb300d564e110a5732d4391d4f8c922968be5878"
       # -- Refer to the Kubernetes documentation on updating images (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
 
     resources:
       # These are the resource recommendations for running WSO2 API Management product profiles with profile optimization
       # Resource configurations defined here are applicable for all API Manager product profiles of this deployment
       requests:
         # -- Memory request for API Manager
-        memory: "2Gi"
+        memory: "1Gi"
         # -- CPU request for API Manager
-        cpu: "2000m"
+        cpu: "1000m"
       limits:
         # -- Memory limit for API Manager
         memory: "3Gi"
         # -- CPU limit for API Manager
-        cpu: "3000m"
+        cpu: "2500m"
       jvm:
         memory:
           # -- JVM heap memory Xms
@@ -639,7 +639,7 @@ wso2:
         sleepSeconds: 10
 
     # Number of deployment replicas
-    replicas: 2
+    replicas: 1
     # HPA configurations
     # -- Minimum replicas for HPA
     minReplicas: 2

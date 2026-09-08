@@ -566,6 +566,20 @@ wso2:
           wsHostname: "websocket-sybylcloud.internal-lab.com"
           httpHostname: "wso2gw-sybylcloud.internal-lab.com"
           websubHostname: "websub-sybylcloud.internal-lab.com"
+        # OpCo Gw 
+        - name: "OpCo Gateway"
+          type: "hybrid"
+          gatewayType: "Regular"
+          provider: "wso2"
+          visibility:
+          displayInApiConsole: true
+          description: "OpCo Gateway"
+          showAsTokenEndpointUrl: true
+          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+          servicePort: 9443
+          wsHostname: "opco-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "opco-gw-sybylcloud.internal-lab.com"
+          websubHostname: "opco-websub-sybylcloud.internal-lab.com"
 
       gatewayNotification:
         enabled: true
@@ -880,21 +894,21 @@ wso2:
           password: ""
           identityServerBaseUrl: ""
 
-      # -- Add custom configurations to deployment.toml. Addin OpCo Gateway for Public APIXChange
-      extraConfigs: |        
-        [[apim.gateway.environment]]
-        name = "OpCo Gateway"
-        type = "hybrid"
-        gateway_type = "Regular"
-        provider = "wso2"
-        display_in_api_console = true
-        description = "OpCo Gateway for Public APIXChange"
-        show_as_token_endpoint_url = true
-        service_url = "https://cloud-mi:9164/services/"
-        username = "${admin.username}"
-        password = "${admin.password}"
-        http_endpoint = "http://cloud-mi:8290"
-        https_endpoint = "https://cloud-mi:8253"
+      # -- Add custom configurations to deployment.toml. Adding OpCo Gateway
+      # extraConfigs: |        
+      #   [[apim.gateway.environment]]
+      #   name = "OpCo Gateway"
+      #   type = "hybrid"
+      #   gateway_type = "Regular"
+      #   provider = "wso2"
+      #   display_in_api_console = true
+      #   description = "OpCo Gateway"
+      #   show_as_token_endpoint_url = true
+      #   service_url = "https://group-gw-wso2am-universal-gw-service:9164/services/"
+      #   username = "${admin.username}"
+      #   password = "${admin.password}"
+      #   http_endpoint = "http://group-gw-wso2am-universal-gw-service:8291"
+      #   https_endpoint = "https://group-gw-wso2am-universal-gw-service:8254"
 
   deployment:
     # Configure High Availability

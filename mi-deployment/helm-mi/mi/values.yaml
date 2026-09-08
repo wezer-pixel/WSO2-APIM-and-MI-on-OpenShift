@@ -123,7 +123,7 @@ wso2:
         
     icp:
       # -- ICP URL
-      url: "https://cloud-icp:9743/dashboard/api/"
+      url: "https://cloud-icp.wso2-dev.svc.cluster.local:9743/dashboard/api/"
       groupId: "default"
       nodeId: "cloud-mi-node-1"
       managementHostname: "cloud-mi"

@@ -1,13 +1,14 @@
-# mi-pvcs.yaml
+# mi-pvcs-dist.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mi-carbonapps-pvc
-  namespace: wso2-dev
+  namespace: wso2-dist
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-sc
+  volumeName: mi-carbonapps-pv
   resources:
     requests:
       storage: 1Gi
@@ -16,11 +17,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mi-conf-pvc
-  namespace: wso2-dev
+  namespace: wso2-dist
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-sc
+  volumeName: mi-conf-pv
   resources:
     requests:
       storage: 1Gi
@@ -29,11 +31,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mi-security-pvc
-  namespace: wso2-dev
+  namespace: wso2-dist
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-sc
+  volumeName: mi-security-pv
   resources:
     requests:
       storage: 1Gi
