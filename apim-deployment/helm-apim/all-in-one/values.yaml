@@ -170,7 +170,7 @@ kubernetes:
     management:
       enabled: true
       # Hostname for API Manager Carbon Management Console, Publisher, DevPortal and Admin Portal
-      hostname: "wso2am-sybylcloud.internal-lab.com"
+      hostname: "group-am-sybylcloud.internal-lab.com"
       # Annotations for the API Manager Publisher-DevPortal services Ingress
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -182,7 +182,7 @@ kubernetes:
     gateway:
       enabled: true
       # -- Ingress hostname for Gateway pass-through
-      hostname: "wso2gw-sybylcloud.internal-lab.com"
+      hostname: "group-gw-sybylcloud.internal-lab.com"
       # -- Ingress annotations for Gateway pass-through
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -193,7 +193,7 @@ kubernetes:
     websocket:
       enabled: true
       # -- Ingress hostname for Websocket
-      hostname: "websocket-sybylcloud.internal-lab.com"
+      hostname: "group-websocket-sybylcloud.internal-lab.com"
       # -- Ingress annotations for Websocket
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -203,7 +203,7 @@ kubernetes:
     websub:
       enabled: true
       # -- Ingress hostname for Websub
-      hostname: "websub-sybylcloud.internal-lab.com"
+      hostname: "group-websub-sybylcloud.internal-lab.com"
       # -- Ingress annotations for Websub
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -351,7 +351,7 @@ kubernetes:
 wso2:
   # -- ELK Analytics Parameters
   ELKAnalytics:
-    enabled: false
+    enabled: true
 
   # -- Moesif Analytics Parameters
   moesifAnalytics:
@@ -372,9 +372,9 @@ wso2:
     # Logging related configurations
     log4j2:
       # -- Console loggers that can be enabled. Allowed values are AUDIT_LOG_CONSOLE, HTTP_ACCESS_CONSOLE, TRANSACTION_CONSOLE, CORRELATION_CONSOLE
-      loggers: ""
+      loggers: "reporter"
       # -- Appenders
-      appenders: ""
+      appenders: "APIM_METRICS_APPENDER"
     # -- Startup arguments for APIM
     startupArgs: ""
     # -- Port Offset for APIM deployment
@@ -553,33 +553,33 @@ wso2:
       gateway:
         # -- APIM Gateway environments
         environments:
-        - name: "Default"
+        - name: "OpCoTz Gateway"
           type: "hybrid"
           gatewayType: "Regular"
           provider: "wso2"
           visibility:
           displayInApiConsole: true
-          description: "This is a hybrid gateway that handles both production and sandbox token traffic."
+          description: "OpCoTz gateway, Tanzania APIs exposed through this group PublicAPIXChange."
           showAsTokenEndpointUrl: true
-          serviceName: "wso2am-gateway-service"
+          serviceName: "opcotz-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
           servicePort: 9443
-          wsHostname: "websocket-sybylcloud.internal-lab.com"
-          httpHostname: "wso2gw-sybylcloud.internal-lab.com"
-          websubHostname: "websub-sybylcloud.internal-lab.com"
-        # OpCo Gw 
-        - name: "OpCo Gateway"
+          wsHostname: "opcotz-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "opcotz-gw-sybylcloud.internal-lab.com"
+          websubHostname: "opcotz-websub-sybylcloud.internal-lab.com"
+        # OpCo Mdgw 
+        - name: "OpCoMdgw Gateway"
           type: "hybrid"
           gatewayType: "Regular"
           provider: "wso2"
           visibility:
           displayInApiConsole: true
-          description: "OpCo Gateway"
+          description: "OpCoMdgw gateway, Madagascar APIs exposed through this group APIXChange."
           showAsTokenEndpointUrl: true
-          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+          serviceName: "opcomdg-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
           servicePort: 9443
-          wsHostname: "opco-websocket-sybylcloud.internal-lab.com"
-          httpHostname: "opco-gw-sybylcloud.internal-lab.com"
-          websubHostname: "opco-websub-sybylcloud.internal-lab.com"
+          wsHostname: "opcomdg-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "opcomdg-gw-sybylcloud.internal-lab.com"
+          websubHostname: "opcomdg-websub-sybylcloud.internal-lab.com"
 
       gatewayNotification:
         enabled: true
@@ -677,7 +677,7 @@ wso2:
       # APIM OAuth configurations
       oauth_config:
         # -- Preserves auth header in outgoing requests
-        enableOutboundAuthHeader: false
+        enableOutboundAuthHeader: true
         # -- OAuth authorization header name
         authHeader: "Authorization"
         # -- OAuth revoke endpoint
