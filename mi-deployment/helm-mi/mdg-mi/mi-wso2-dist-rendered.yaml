@@ -1,0 +1,351 @@
+---
+# Source: mi/templates/mi-conf-entrypoint.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-mi-mi-entrypoint
+  namespace: wso2-dist
+data:
+  docker-entrypoint.sh: |-
+    #!/bin/sh
+    set -e
+    # volume mounts
+    config_volume=${WORKING_DIRECTORY}/wso2-config-volume
+    # check if the WSO2 non-root user home exists
+    test ! -d ${WORKING_DIRECTORY} && echo "WSO2 Docker non-root user home does not exist" && exit 1
+    # check if the WSO2 product home exists
+    test ! -d ${WSO2_SERVER_HOME} && echo "WSO2 Docker product home does not exist" && exit 1
+    # copy any configuration changes mounted to config_volume
+    test -d ${config_volume} && [ "$(ls -A ${config_volume})" ] && cp -RL ${config_volume}/* ${WSO2_SERVER_HOME}/
+    # start WSO2 server
+    sh ${WSO2_SERVER_HOME}/bin/micro-integrator.sh "$@"
+---
+# Source: mi/templates/mi-conf.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-mi-mi-toml
+  namespace : wso2-dist
+data:
+  deployment.toml: "[server]\nhostname = \"wso2mi-sybylcloud.internal-lab.com\"\noffset  = 10\n\n[transport.https.properties]\nproxyPort = 443\n\n[internal_apis.file_user_store]\nenable = true\n\n[super_admin]\nusername = \"admin\"\ncreate_admin_account = true\npassword = \"admin\"\n\n[keystore.primary]\nfile_name = \"repository/resources/security/wso2carbon.jks\"\nalias = \"wso2carbon\"\npassword = \"wso2carbon\"\nkey_password = \"wso2carbon\"\n\n[keystore.internal]\nfile_name = \"repository/resources/security/wso2carbon.jks\"\nalias = \"wso2carbon\"\npassword = \"wso2carbon\"\nkey_password = \"wso2carbon\"\n\n[truststore]\nfile_name = \"repository/resources/security/client-truststore.jks\"\npassword = \"wso2carbon\"\nalias = \"symmetric.key.value\"\nalgorithm = \"AES\"\n\n\n\n\n[dashboard_config]\ndashboard_url = \"https://cloud-icp.wso2-dev.svc.cluster.local:9743/dashboard/api/\"\nheartbeat_interval = 5\ngroup_id = \"default\"\nnode_id = \"cloud-mi-node-1\"\nmanagement_hostname = \"cloud-mi\"\nmanagement_port = 9164\n\n\n[[service_catalog]]\napim_host = \"https://apim-wso2am-all-in-one-am-service.wso2-dev.svc.cluster.local:9763\"\nenable = true\nusername = \"admin\"\npassword = \"admin\"\n\n\n[synapse_properties]\n'org.wso2.ignoreHostnameVerification' = true\n\n\n\n\n\n\n[transport.passthrough]\ndisable_ssl_verification = true"
+---
+# Source: mi/templates/mi-log4j2-conf.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-mi-mi-log4j2-properties
+  namespace : wso2-dist
+data:
+  log4j2.properties: "# ------------------------------------------------------------------------------------\n# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.\n#\n# WSO2 LLC. licenses this file to you under the Apache License,\n# Version 2.0 (the \"License\"); you may not use this file except\n# in compliance with the License.\n# You may obtain a copy of the License at\n#\n# http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing,\n# software distributed under the License is distributed on an\n# \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n# KIND, either express or implied. See the License for the\n# specific language governing permissions and limitations\n# under the License.\n#------------------------------------------------------------------------------------\n\n##\n# This is the log4j configuration file used by WSO2 MI\n# =====================================================\n#\n# IMPORTANT : Please do not remove or change the names of any of the Appenders defined here.\n##\n\n##\n# WSO2 MI is now able to create per-service trace logs at runtime. Thus while a message\n# is being processed through a Proxy service or the Synapse service (i.e. message mediation through\n# the 'main' sequence), tracing may be turned 'on' at any Proxy, Sequence or Mediator level. This\n# trace state 'flows' with the message - i.e from a trace enabled sequence to another sequence etc.\n# and applies to all mediators within a trace enabled sequence etc. unless another sequence or\n# mediator does not override and specify a different trace setting.\n##\n\n# the root category is ERROR (applies for all 3rd party JARs etc) and will be logged to the\n# LOG_APPENDER and the CONSOLE_APPENDER\n\n# list of all appenders\n#add entry \"syslog\" to use the syslog appender\nappenders = CARBON_CONSOLE, HTTP_ACCESS_CONSOLE, AUDIT_CONSOLE, CORRELATION_CONSOLE, ATOMIKOS_LOGFILE, CARBON_TRACE_LOGFILE, osgi, SERVICE_LOGFILE, API_LOGFILE, ERROR_LOGFILE, OPEN_TELEMETRY\n#, syslog\n\n# CARBON_CONSOLE is set to be a ConsoleAppender using a PatternLayout.\nappender.CARBON_CONSOLE.type = Console\nappender.CARBON_CONSOLE.name = CARBON_CONSOLE\nappender.CARBON_CONSOLE.layout.type = PatternLayout\nappender.CARBON_CONSOLE.layout.pattern = [%d] [%X{Correlation-ID}] : mi : %5p {%c} - %replace{%m}{\\n}{|}%ex{separator(|)}%n\nappender.CARBON_CONSOLE.filter.threshold.type = ThresholdFilter\nappender.CARBON_CONSOLE.filter.threshold.level = DEBUG\n\nappender.HTTP_ACCESS_CONSOLE.type = Console\nappender.HTTP_ACCESS_CONSOLE.name = HTTP_ACCESS_CONSOLE\nappender.HTTP_ACCESS_CONSOLE.layout.type = PatternLayout\nappender.HTTP_ACCESS_CONSOLE.layout.pattern =  mi-access [%X{Correlation-ID}] %mm%n\nappender.HTTP_ACCESS_CONSOLE.filter.threshold.type = ThresholdFilter\nappender.HTTP_ACCESS_CONSOLE.filter.threshold.level = DEBUG\n\n# AUDIT_CONSOLE is set to be a ConsoleAppender using a PatternLayout.\nappender.AUDIT_CONSOLE.type = Console\nappender.AUDIT_CONSOLE.name = AUDIT_CONSOLE\nappender.AUDIT_CONSOLE.layout.type = PatternLayout\nappender.AUDIT_CONSOLE.layout.pattern =  [%d] [%X{Correlation-ID}] : mi-audit : %5p {%c} - %replace{%mm}{\\n}{|}%ex{separator(|)}%n\nappender.AUDIT_CONSOLE.filter.threshold.type = ThresholdFilter\nappender.AUDIT_CONSOLE.filter.threshold.level = DEBUG\n\n# CORRELATION_CONSOLE is set to be a ConsoleAppender using a PatternLayout.\nappender.CORRELATION_CONSOLE.type = Console\nappender.CORRELATION_CONSOLE.name = CORRELATION_CONSOLE\nappender.CORRELATION_CONSOLE.layout.type = PatternLayout\nappender.CORRELATION_CONSOLE.layout.pattern =  %d{yyyy-MM-dd HH:mm:ss,SSS}|%X{Correlation-ID} : mi-correlation : |%t|%mm%n\nappender.CORRELATION_CONSOLE.filter.threshold.type = ThresholdFilter\nappender.CORRELATION_CONSOLE.filter.threshold.level = DEBUG\n\nappender.OPEN_TELEMETRY.type = RollingFile\nappender.OPEN_TELEMETRY.name = OPEN_TELEMETRY\nappender.OPEN_TELEMETRY.fileName = ${sys:logfiles.home}/wso2-mi-open-telemetry.log\nappender.OPEN_TELEMETRY.filePattern = ${sys:logfiles.home}/wso2-mi-open-telemetry-%d{MM-dd-yyyy}-%i.log.gz\nappender.OPEN_TELEMETRY.layout.type = PatternLayout\nappender.OPEN_TELEMETRY.layout.pattern = %d{MM-dd-yyyy}-%d{HH:mm:ss,SSS} [%X{ip}-%X{host}] [%t] %5p %m%n\nappender.OPEN_TELEMETRY.policies.type = Policies\nappender.OPEN_TELEMETRY.policies.time.type = TimeBasedTriggeringPolicy\nappender.OPEN_TELEMETRY.policies.time.interval = 1\nappender.OPEN_TELEMETRY.policies.time.modulate = true\nappender.OPEN_TELEMETRY.policies.size.type = SizeBasedTriggeringPolicy\nappender.OPEN_TELEMETRY.policies.size.size = 10MB\nappender.OPEN_TELEMETRY.strategy.type = DefaultRolloverStrategy\nappender.OPEN_TELEMETRY.strategy.max = 20\nappender.OPEN_TELEMETRY.filter.threshold.type = ThresholdFilter\nappender.OPEN_TELEMETRY.filter.threshold.level = TRACE\n\n# Appender config to SERVICE_LOGFILE\nappender.SERVICE_LOGFILE.type = RollingFile\nappender.SERVICE_LOGFILE.name = SERVICE_LOGFILE\nappender.SERVICE_LOGFILE.fileName = ${sys:logfiles.home}/wso2-mi-service.log\nappender.SERVICE_LOGFILE.filePattern = ${sys:logfiles.home}/wso2-mi-service-%d{MM-dd-yyyy}.log\nappender.SERVICE_LOGFILE.layout.type = PatternLayout\nappender.SERVICE_LOGFILE.layout.pattern = [%d] %5p {%c} - %m%ex%n\nappender.SERVICE_LOGFILE.policies.type = Policies\nappender.SERVICE_LOGFILE.policies.size.type = SizeBasedTriggeringPolicy\nappender.SERVICE_LOGFILE.policies.size.size=10MB\nappender.SERVICE_LOGFILE.strategy.type = DefaultRolloverStrategy\nappender.SERVICE_LOGFILE.strategy.max = 20\n\n# Appender config to API_APPENDER\nappender.API_LOGFILE.type = RollingFile\nappender.API_LOGFILE.name = API_LOGFILE\nappender.API_LOGFILE.fileName = ${sys:logfiles.home}/wso2-mi-api.log\nappender.API_LOGFILE.filePattern = ${sys:logfiles.home}/wso2-mi-api-%d{MM-dd-yyyy}.log\nappender.API_LOGFILE.layout.type = PatternLayout\nappender.API_LOGFILE.layout.pattern = [%d] %5p {%c} - %m%ex%n\nappender.API_LOGFILE.policies.type = Policies\nappender.API_LOGFILE.policies.size.type = SizeBasedTriggeringPolicy\nappender.API_LOGFILE.policies.size.size=10MB\nappender.API_LOGFILE.strategy.type = DefaultRolloverStrategy\nappender.API_LOGFILE.strategy.max = 20\n\n# Appender config to SERVICE_APPENDER\nappender.ERROR_LOGFILE.type = RollingFile\nappender.ERROR_LOGFILE.name = ERROR_LOGFILE\nappender.ERROR_LOGFILE.fileName = ${sys:logfiles.home}/wso2error.log\nappender.ERROR_LOGFILE.filePattern = ${sys:logfiles.home}/wso2error-%d{MM-dd-yyyy}.log\nappender.ERROR_LOGFILE.layout.type = PatternLayout\nappender.ERROR_LOGFILE.layout.pattern = [%d] %5p {%c} - %m%ex%n\nappender.ERROR_LOGFILE.policies.type = Policies\nappender.ERROR_LOGFILE.policies.time.type = TimeBasedTriggeringPolicy\nappender.ERROR_LOGFILE.policies.time.interval = 1\nappender.ERROR_LOGFILE.policies.time.modulate = true\nappender.ERROR_LOGFILE.policies.size.type = SizeBasedTriggeringPolicy\nappender.ERROR_LOGFILE.policies.size.size=10MB\nappender.ERROR_LOGFILE.strategy.type = DefaultRolloverStrategy\nappender.ERROR_LOGFILE.strategy.max = 20\nappender.ERROR_LOGFILE.filter.threshold.type = ThresholdFilter\nappender.ERROR_LOGFILE.filter.threshold.level = WARN\n\n# Appender config to send Atomikos transaction logs to new log file tm.out.\nappender.ATOMIKOS_LOGFILE.type = RollingFile\nappender.ATOMIKOS_LOGFILE.name = ATOMIKOS_LOGFILE\nappender.ATOMIKOS_LOGFILE.fileName = ${sys:logfiles.home}/tm.out\nappender.ATOMIKOS_LOGFILE.filePattern = ${sys:logfiles.home}/tm-%d{MM-dd-yyyy}.out\nappender.ATOMIKOS_LOGFILE.layout.type = PatternLayout\nappender.ATOMIKOS_LOGFILE.layout.pattern = [%d] %5p {%c} - %m%ex%n\nappender.ATOMIKOS_LOGFILE.policies.type = Policies\nappender.ATOMIKOS_LOGFILE.policies.time.type = TimeBasedTriggeringPolicy\nappender.ATOMIKOS_LOGFILE.policies.time.interval = 1\nappender.ATOMIKOS_LOGFILE.policies.time.modulate = true\nappender.ATOMIKOS_LOGFILE.policies.size.type = SizeBasedTriggeringPolicy\nappender.ATOMIKOS_LOGFILE.policies.size.size=10MB\nappender.ATOMIKOS_LOGFILE.strategy.type = DefaultRolloverStrategy\nappender.ATOMIKOS_LOGFILE.strategy.max = 20\n\n# Appender config to CARBON_TRACE_LOGFILE\nappender.CARBON_TRACE_LOGFILE.type = RollingFile\nappender.CARBON_TRACE_LOGFILE.name = CARBON_TRACE_LOGFILE\nappender.CARBON_TRACE_LOGFILE.fileName = ${sys:logfiles.home}/wso2carbon-trace-messages.log\nappender.CARBON_TRACE_LOGFILE.filePattern = ${sys:logfiles.home}/wso2carbon-trace-messages-%d{MM-dd-yyyy}.log\nappender.CARBON_TRACE_LOGFILE.layout.type = PatternLayout\nappender.CARBON_TRACE_LOGFILE.layout.pattern = [%d] %5p {%c} - %m%ex%n\nappender.CARBON_TRACE_LOGFILE.policies.type = Policies\nappender.CARBON_TRACE_LOGFILE.policies.time.type = TimeBasedTriggeringPolicy\nappender.CARBON_TRACE_LOGFILE.policies.time.interval = 1\nappender.CARBON_TRACE_LOGFILE.policies.time.modulate = true\nappender.CARBON_TRACE_LOGFILE.policies.size.type = SizeBasedTriggeringPolicy\nappender.CARBON_TRACE_LOGFILE.policies.size.size=10MB\nappender.CARBON_TRACE_LOGFILE.strategy.type = DefaultRolloverStrategy\nappender.CARBON_TRACE_LOGFILE.strategy.max = 20\n\nloggers = HTTP_ACCESS, AUDIT_LOG, SERVICE_LOGGER, API_LOGGER, trace-messages, org-apache-coyote, com-hazelcast, Owasp-CsrfGuard, \\\n\t  org-apache-axis2-wsdl-codegen-writer-PrettyPrinter, org-apache-axis2-clustering, org-apache-catalina, \\\n\t  org-apache-tomcat, org-wso2-carbon-apacheds, org-apache-directory-server-ldap, \\\n\t  org-apache-directory-server-core-event, com-atomikos, org-quartz, org-apache-jackrabbit-webdav, org-apache-juddi, \\\n\t  org-apache-commons-digester-Digester, org-apache-jasper-compiler-TldLocationsCache, org-apache-qpid, \\\n\t  org-apache-qpid-server-Main, qpid-message, qpid-message-broker-listening, org-apache-tiles, \\\n\t  org-apache-commons-httpclient, org-apache-solr, me-prettyprint-cassandra-hector-TimingLogger, \\\n  org-apache-axis-enterprise, org-apache-directory-shared-ldap, org-apache-directory-server-ldap-handlers, \\\n  org-apache-directory-shared-ldap-entry-DefaultServerAttribute, \\\n  org-apache-directory-server-core-DefaultDirectoryService, org-apache-directory-shared-ldap-ldif-LdifReader, \\\n  org-apache-directory-server-ldap-LdapProtocolHandler, org-apache-directory-server-core, \\\n  org-apache-directory-server-ldap-LdapSession, DataNucleus, Datastore, Datastore-Schema, JPOX-Datastore, \\\n  JPOX-Plugin, JPOX-MetaData, JPOX-Query, JPOX-General, JPOX-Enhancer, org-apache-hadoop-hive, hive, ExecMapper, \\\n  ExecReducer, net-sf-ehcache-config-ConfigurationFactory, axis2Deployment, equinox, tomcat2, StAXDialectDetector, \\\n  BlueprintExtender, ModuleDeployer, VFSTransportSender, PassThroughHttpSender, PassThroughHttpSSLSender, \\\n  PassThroughHttpListener, PassThroughHttpSSLListener, DeploymentEngine, TaskServiceImpl, SynapseControllerFactory, \\\n  Axis2SynapseController, MultiXMLConfigurationBuilder, XMLConfigurationBuilder, \\\n  VFSTransportListener, NTaskTaskManager, MediationStatisticsComponent, SynapseConfigurationBuilder, ServerManager, correlation, \\\n  synapse-transport-http-headers, synapse-transport-http-wire, httpclient-wire-header, httpclient-wire-content, SMBJ, opentelemetry-trace\n\n# Uncomment the following section and comment the above for verbose logging\n#loggers = AUDIT_LOG, SERVICE_LOGGER, trace-messages, org-apache-coyote, com-hazelcast, Owasp-CsrfGuard, \\\n#\t  org-apache-axis2-wsdl-codegen-writer-PrettyPrinter, org-apache-axis2-clustering, org-apache-catalina, \\\n#\t  org-apache-tomcat, org-wso2-carbon-apacheds, org-apache-directory-server-ldap, \\\n#\t  org-apache-directory-server-core-event, com-atomikos, org-quartz, org-apache-jackrabbit-webdav, org-apache-juddi, \\\n#\t  org-apache-commons-digester-Digester, org-apache-jasper-compiler-TldLocationsCache, org-apache-qpid, \\\n#\t  org-apache-qpid-server-Main, qpid-message, qpid-message-broker-listening, org-apache-tiles, \\\n#\t  org-apache-commons-httpclient, org-apache-solr, me-prettyprint-cassandra-hector-TimingLogger, \\\n#  org-apache-axis-enterprise, org-apache-directory-shared-ldap, org-apache-directory-server-ldap-handlers, \\\n#  org-apache-directory-shared-ldap-entry-DefaultServerAttribute, \\\n#  org-apache-directory-server-core-DefaultDirectoryService, org-apache-directory-shared-ldap-ldif-LdifReader, \\\n#  org-apache-directory-server-ldap-LdapProtocolHandler, org-apache-directory-server-core, \\\n#  org-apache-directory-server-ldap-LdapSession, DataNucleus, Datastore, Datastore-Schema, JPOX-Datastore, \\\n#  JPOX-Plugin, JPOX-MetaData, JPOX-Query, JPOX-General, JPOX-Enhancer, org-apache-hadoop-hive, hive, ExecMapper, \\\n#  ExecReducer, net-sf-ehcache-config-ConfigurationFactory, axis2Deployment, equinox, tomcat2, StAXDialectDetector, correlation\n\nlogger.HTTP_ACCESS.name = org.apache.synapse.transport.nhttp.access\nlogger.HTTP_ACCESS.level = DEBUG\nlogger.HTTP_ACCESS.appenderRef.HTTP_ACCESS_CONSOLE.ref = HTTP_ACCESS_CONSOLE\nlogger.HTTP_ACCESS.additivity = false\n\n# Info logs for following loggers are disabled to improve performance\nlogger.ModuleDeployer.name = org.apache.axis2.deployment.ModuleDeployer\nlogger.ModuleDeployer.level = WARN\n\nlogger.VFSTransportSender.name = org.apache.synapse.transport.vfs.VFSTransportSender\nlogger.VFSTransportSender.level = WARN\n\nlogger.PassThroughHttpSender.name = org.apache.synapse.transport.passthru.PassThroughHttpSender\nlogger.PassThroughHttpSender.level = WARN\n\nlogger.PassThroughHttpSSLSender.name = org.apache.synapse.transport.passthru.PassThroughHttpSSLSender\nlogger.PassThroughHttpSSLSender.level = WARN\n\nlogger.PassThroughHttpListener.name = org.apache.synapse.transport.passthru.PassThroughHttpListener\nlogger.PassThroughHttpListener.level = WARN\n\nlogger.PassThroughHttpSSLListener.name = org.apache.synapse.transport.passthru.PassThroughHttpSSLListener\nlogger.PassThroughHttpSSLListener.level = WARN\n\nlogger.DeploymentEngine.name = org.apache.axis2.deployment.DeploymentEngine\nlogger.DeploymentEngine.level = WARN\n\nlogger.TaskServiceImpl.name = org.wso2.micro.integrator.ntask.core.service.impl.TaskServiceImpl\nlogger.TaskServiceImpl.level = WARN\n\nlogger.SynapseControllerFactory.name = org.apache.synapse.SynapseControllerFactory\nlogger.SynapseControllerFactory.level = WARN\n\nlogger.Axis2SynapseController.name = org.apache.synapse.Axis2SynapseController\nlogger.Axis2SynapseController.level = WARN\n\nlogger.ServerManager.name = org.apache.synapse.ServerManager\nlogger.ServerManager.level = WARN\n\nlogger.MultiXMLConfigurationBuilder.name = org.apache.synapse.config.xml.MultiXMLConfigurationBuilder\nlogger.MultiXMLConfigurationBuilder.level = WARN\n\nlogger.XMLConfigurationBuilder.name = org.apache.synapse.config.xml.XMLConfigurationBuilder\nlogger.XMLConfigurationBuilder.level = WARN\n\nlogger.VFSTransportListener.name = org.apache.synapse.transport.vfs.VFSTransportListener\nlogger.VFSTransportListener.level = WARN\n\nlogger.NTaskTaskManager.name = org.wso2.micro.integrator.mediation.ntask.NTaskTaskManager\nlogger.NTaskTaskManager.level = WARN\nlogger.MediationStatisticsComponent.name=org.wso2.micro.integrator.analytics.messageflow.data.publisher.internal.MediationStatisticsComponent\nlogger.MediationStatisticsComponent.level = WARN\n\nlogger.SynapseConfigurationBuilder.name = org.apache.synapse.config.SynapseConfigurationBuilder\nlogger.SynapseConfigurationBuilder.level = WARN\n\nlogger.BlueprintExtender.name = org.apache.aries.blueprint.container.BlueprintExtender\nlogger.BlueprintExtender.level = WARN\n\nlogger.AUDIT_LOG.name = AUDIT_LOG\nlogger.AUDIT_LOG.level = INFO\nlogger.AUDIT_LOG.appenderRef.AUDIT_CONSOLE.ref = AUDIT_CONSOLE\nlogger.AUDIT_LOG.additivity = false\n\nlogger.opentelemetry-trace.name = tracer\nlogger.opentelemetry-trace.level = TRACE\nlogger.opentelemetry-trace.appenderRef.OPEN_TELEMETRY.ref = OPEN_TELEMETRY\nlogger.opentelemetry-trace.additivity = false\n\nlogger.SERVICE_LOGGER.name= SERVICE_LOGGER\nlogger.SERVICE_LOGGER.level = INFO\nlogger.SERVICE_LOGGER.appenderRef.SERVICE_LOGFILE.ref = SERVICE_LOGFILE\nlogger.SERVICE_LOGGER.additivity = false\n\nlogger.API_LOGGER.name= API_LOGGER\nlogger.API_LOGGER.level = INFO\nlogger.API_LOGGER.appenderRef.SERVICE_LOGFILE.ref = API_LOGFILE\nlogger.API_LOGGER.additivity = false\n\nlogger.trace-messages.name = trace.messages\nlogger.trace-messages.level = TRACE\nlogger.trace-messages.appenderRef.CARBON_TRACE_LOGFILE.ref = CARBON_TRACE_LOGFILE\n\nlogger.org-apache-coyote.name = org.apache.coyote\nlogger.org-apache-coyote.level = WARN\n\nlogger.com-hazelcast.name = com.hazelcast\nlogger.com-hazelcast.level = ERROR\n\nlogger.Owasp-CsrfGuard.name = Owasp.CsrfGuard\nlogger.Owasp-CsrfGuard.level = WARN\n\n# Following are to log HTTP headers and messages\nlogger.synapse-transport-http-headers.name=org.apache.synapse.transport.http.headers\nlogger.synapse-transport-http-headers.level=OFF\n\nlogger.synapse-transport-http-wire.name=org.apache.synapse.transport.http.wire\nlogger.synapse-transport-http-wire.level=OFF\n\n# Following entries are to see HTTP headers and messages of Callout mediator/MessageProcessor\nlogger.httpclient-wire-header.name=httpclient.wire.header\nlogger.httpclient-wire-header.level=OFF\n\nlogger.httpclient-wire-content.name=httpclient.wire.content\nlogger.httpclient-wire-content.level=OFF\n\nlogger.org-apache-axis2-wsdl-codegen-writer-PrettyPrinter.name = org.apache.axis2.wsdl.codegen.writer.PrettyPrinter\nlogger.org-apache-axis2-wsdl-codegen-writer-PrettyPrinter.level = ERROR\n\nlogger.org-apache-axis2-clustering.name = org.apache.axis2.clustering\nlogger.org-apache-axis2-clustering.level = INFO\nlogger.org-apache-axis2-clustering.additivity = false\n\nlogger.org-apache.name = org.apache\nlogger.org-apache.level = INFO\nlogger.org-apache.additivity = false\n\nlogger.org-apache-catalina.name = org.apache.catalina\nlogger.org-apache-catalina.level = ERROR\n\nlogger.org-apache-tomcat.name = org.apache.tomcat\nlogger.org-apache-tomcat.level = INFO\n\nlogger.org-wso2-carbon-apacheds.name = org.wso2.carbon.apacheds\nlogger.org-wso2-carbon-apacheds.level = WARN\n\nlogger.org-apache-directory-server-ldap.name = org.apache.directory.server.ldap\nlogger.org-apache-directory-server-ldap.level = ERROR\n\nlogger.org-apache-directory-server-core-event.name = org.apache.directory.server.core.event\nlogger.org-apache-directory-server-core-event.level = WARN\n\nlogger.com-atomikos.name = com.atomikos\nlogger.com-atomikos.level = INFO\nlogger.com-atomikos.additivity = false\nlogger.com-atomikos.appenderRef.ATOMIKOS_LOGFILE.ref = ATOMIKOS_LOGFILE\n\nlogger.org-quartz.name = org.quartz\nlogger.org-quartz.level = WARN\n\nlogger.org-apache-jackrabbit-webdav.name = org.apache.jackrabbit.webdav\nlogger.org-apache-jackrabbit-webdav.level = WARN\n\nlogger.org-apache-juddi.name = org.apache.juddi\nlogger.org-apache-juddi.level = ERROR\n\nlogger.org-apache-commons-digester-Digester.name = org.apache.commons.digester.Digester\nlogger.org-apache-commons-digester-Digester.level = WARN\n\nlogger.org-apache-jasper-compiler-TldLocationsCache.name = org.apache.jasper.compiler.TldLocationsCache\nlogger.org-apache-jasper-compiler-TldLocationsCache.level = WARN\n\nlogger.org-apache-qpid.name = org.apache.qpid\nlogger.org-apache-qpid.level = WARN\n\nlogger.org-apache-qpid-server-Main.name = org.apache.qpid.server.Main\nlogger.org-apache-qpid-server-Main.level = INFO\n\nlogger.qpid-message.name = qpid.message\nlogger.qpid-message.level = WARN\n\nlogger.qpid-message-broker-listening.name = qpid.message.broker.listening\nlogger.qpid-message-broker-listening.level = INFO\n\nlogger.org-apache-tiles.name = org.apache.tiles\nlogger.org-apache-tiles.level = WARN\n\nlogger.org-apache-commons-httpclient.name = org.apache.commons.httpclient\nlogger.org-apache-commons-httpclient.level = ERROR\n\nlogger.org-apache-solr.name = org.apache.solr\nlogger.org-apache-solr.level = ERROR\n\nlogger.me-prettyprint-cassandra-hector-TimingLogger.name = me.prettyprint.cassandra.hector.TimingLogger\nlogger.me-prettyprint-cassandra-hector-TimingLogger.level = ERROR\n\nlogger.org-wso2.name = org.wso2\nlogger.org-wso2.level = ERROR\n\nlogger.org-apache-axis-enterprise.name = org.apache.axis2.enterprise\nlogger.org-apache-axis-enterprise.level = FATAL\n\nlogger.org-apache-directory-shared-ldap.name = org.apache.directory.shared.ldap\nlogger.org-apache-directory-shared-ldap.level = WARN\n\nlogger.org-apache-directory-server-ldap-handlers.name = org.apache.directory.server.ldap.handlers\nlogger.org-apache-directory-server-ldap-handlers.level = WARN\n\n#Following are to remove false error messages from startup (IS)\nlogger.org-apache-directory-shared-ldap-entry-DefaultServerAttribute.name = org.apache.directory.shared.ldap.entry.DefaultServerAttribute\nlogger.org-apache-directory-shared-ldap-entry-DefaultServerAttribute.level = FATAL\n\nlogger.org-apache-directory-server-core-DefaultDirectoryService.name = org.apache.directory.server.core.DefaultDirectoryService\nlogger.org-apache-directory-server-core-DefaultDirectoryService.level = ERROR\n\nlogger.org-apache-directory-shared-ldap-ldif-LdifReader.name = org.apache.directory.shared.ldap.ldif.LdifReader\nlogger.org-apache-directory-shared-ldap-ldif-LdifReader.level = ERROR\n\nlogger.org-apache-directory-server-ldap-LdapProtocolHandler.name = org.apache.directory.server.ldap.LdapProtocolHandler\nlogger.org-apache-directory-server-ldap-LdapProtocolHandler.level = ERROR\n\nlogger.org-apache-directory-server-core.name = org.apache.directory.server.core\nlogger.org-apache-directory-server-core.level = ERROR\n\nlogger.org-apache-directory-server-ldap-LdapSession.name = org.apache.directory.server.ldap.LdapSession\nlogger.org-apache-directory-server-ldap-LdapSession.level = Error\n\nlogger.correlation.name = correlation\nlogger.correlation.level = INFO\nlogger.correlation.appenderRef.CORRELATION_CONSOLE.ref = CORRELATION_CONSOLE\nlogger.correlation.additivity = false\n\n#Hive Related Log configurations\nlogger.DataNucleus.name = DataNucleus\nlogger.DataNucleus.level = ERROR\n\nlogger.Datastore.name = Datastore\nlogger.Datastore.level = ERROR\n\nlogger.Datastore-Schema.name = Datastore.Schema\nlogger.Datastore-Schema.level = ERROR\n\nlogger.JPOX-Datastore.name = JPOX.Datastore\nlogger.JPOX-Datastore.level = ERROR\n\nlogger.JPOX-Plugin.name = JPOX.Plugin\nlogger.JPOX-Plugin.level = ERROR\n\nlogger.JPOX-MetaData.name = JPOX.MetaData\nlogger.JPOX-MetaData.level = ERROR\n\nlogger.JPOX-Query.name = JPOX.Query\nlogger.JPOX-Query.level = ERROR\n\nlogger.JPOX-General.name = JPOX.General\nlogger.JPOX-General.level = ERROR\n\nlogger.JPOX-Enhancer.name = JPOX.Enhancer\nlogger.JPOX-Enhancer.level = ERROR\n\nlogger.org-apache-hadoop-hive.name = org.apache.hadoop.hive\nlogger.org-apache-hadoop-hive.level = WARN\n\nlogger.hive.name = hive\nlogger.hive.level = WARN\n\nlogger.ExecMapper.name = ExecMapper\nlogger.ExecMapper.level = WARN\n\nlogger.ExecReducer.name = ExecReducer\nlogger.ExecReducer.level = WARN\n\nlogger.net-sf-ehcache-config-ConfigurationFactory.name = net.sf.ehcache.config.ConfigurationFactory\nlogger.net-sf-ehcache-config-ConfigurationFactory.level = ERROR\n\nlogger.axis2Deployment.name = org.apache.axis2.deployment\nlogger.axis2Deployment.level = WARN\n\nlogger.equinox.name = org.eclipse.equinox\nlogger.equinox.level = FATAL\n\nlogger.tomcat2.name = tomcat\nlogger.tomcat2.level = FATAL\n\nlogger.StAXDialectDetector.name = org.apache.axiom.util.stax.dialect.StAXDialectDetector\nlogger.StAXDialectDetector.level = ERROR\n\nlogger.SMBJ.name = com.hierynomus.smbj\nlogger.SMBJ.level = ERROR\n\n# root loggers\n#uncomment the last line to add syslog appender to the root loggers\nrootLogger.level = INFO\nrootLogger.appenderRef.CARBON_CONSOLE.ref = CARBON_CONSOLE\n#rootLogger.appenderRef.syslog.ref = syslog\n\nappender.osgi.type = PaxOsgi\nappender.osgi.name = PaxOsgi\nappender.osgi.filter = *\nrootLogger.appenderRef.osgi.ref=PaxOsgi\n"
+---
+# Source: mi/templates/mi-service.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-mi
+  namespace: wso2-dist
+  labels:
+    app.kubernetes.io/name: mi
+    helm.sh/chart: mi-4.4.0-0
+    app.kubernetes.io/instance: mi
+    app.kubernetes.io/version: "4.4.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    deployment: cloud-mi
+  ports:
+    - port: 8290
+      targetPort: 8290
+      protocol: TCP
+      name: pass-through-http
+    - port: 8253
+      targetPort: 8253
+      protocol: TCP
+      name: pass-through-https
+    - port: 9201
+      targetPort: 9201
+      protocol: TCP
+      name: metrics
+    - port: 9164
+      targetPort: 9164
+      protocol: TCP
+      name: management
+---
+# Source: mi/templates/mi-deployment.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-mi
+  namespace: wso2-dist
+  labels:
+    app.kubernetes.io/name: mi
+    helm.sh/chart: mi-4.4.0-0
+    app.kubernetes.io/instance: mi
+    app.kubernetes.io/version: "4.4.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_22=suppress read-only file system check
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      deployment: cloud-mi
+  template:
+    metadata:
+      annotations:
+        checksum.mi.toml: 523dfb7cb5eb66a216890e5c427903e3b08d48efe042581cabc36bfd7ce5fb41
+        checksum.mi.log4j2.properties: 0f57d4bea07fe96eda5cc78b80460d37daaa98a0d46affde21cd805e53330424
+        checksum.mi.secret.properties: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum.mi.entrypoint.sh: c1b3935fb67b5df14622faf6389d522d47cc37bbcfb44c2f9179702a8e222b1b
+      labels:
+        deployment: cloud-mi
+    spec:
+      securityContext:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: deployment
+                      operator: In
+                      values:
+                        - cloud-mi
+                topologyKey: topology.kubernetes.io/zone
+      containers:
+        - name: wso2mi
+          image: "wezer/wso2mi-openshift@sha256:ef1cd8978881bbc8df82a71b7bac1a715ff0cea46d1e389df1743ab14b6894f3"
+          imagePullPolicy: IfNotPresent
+          args:
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - nc -z localhost 8253
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 40
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 9201
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9201
+            initialDelaySeconds: 6
+            periodSeconds: 1
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8253
+              protocol: TCP
+            - containerPort: 9201
+              protocol: TCP
+            - containerPort: 9164
+              protocol: TCP
+          env:
+            - name: JAVA_MEM_OPTS
+              value: "-Xms512m -Xmx1024m"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: JAVA_OPTS
+              value: "-Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks -Djavax.net.ssl.trustStorePassword=wso2carbon -Dhttps.protocols=TLSv1.2 -Dtrust.all.certs=true -Djdk.internal.httpclient.disableHostnameVerification=true"
+          volumeMounts:
+            - name: wso2mi-toml
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/deployment.toml
+              subPath: deployment.toml
+            - name: wso2mi-log4j2-properties
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/log4j2.properties
+              subPath: log4j2.properties
+            - name: capps
+              mountPath: /home/wso2carbon/wso2mi-4.4.0/repository/deployment/server/carbonapps
+              # Primary keystore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-4.4.0/repository/resources/security/wso2carbon.jks
+              subPath: wso2carbon.jks
+              # Internal keystore - only mount if different from primary keystore
+            - name: wso2mi-entrypoint
+              mountPath: /home/wso2carbon/docker-entrypoint.sh
+              subPath: docker-entrypoint.sh
+      volumes:
+        - name: wso2mi-toml
+          configMap:
+            name: cloud-mi-mi-toml
+        - name: wso2mi-log4j2-properties
+          configMap:
+            name: cloud-mi-mi-log4j2-properties
+        - name: keystores
+          secret:
+            secretName: mi-keystores
+        - name: capps
+          persistentVolumeClaim:
+            claimName: mi-carbonapps-pvc
+        - name: wso2mi-entrypoint
+          configMap:
+            name: cloud-mi-mi-entrypoint
+            defaultMode: 493
+---
+# Source: mi/templates/mi-ingress.yaml
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloud-mi
+  namespace : wso2-dist
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - "wso2mi-sybylcloud.internal-lab.com"
+      secretName: wso2-shared-wildcard-tls
+  rules:
+    - host: "wso2mi-sybylcloud.internal-lab.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-mi
+                port:
+                  number: 8253
+          - path: /management
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-mi
+                port:
+                  number: 9164

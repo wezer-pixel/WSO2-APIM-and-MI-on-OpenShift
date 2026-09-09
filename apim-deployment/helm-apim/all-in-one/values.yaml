@@ -567,49 +567,49 @@ wso2:
           httpHostname: "group-gw-sybylcloud.internal-lab.com"
           websubHostname: "group-websub-sybylcloud.internal-lab.com"
           
-        # OpCo Gw 
-        - name: "OpCo Gateway"
-          type: "hybrid"
-          gatewayType: "Regular"
-          provider: "wso2"
-          visibility:
-          displayInApiConsole: true
-          description: "OpCo Gateway"
-          showAsTokenEndpointUrl: true
-          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
-          servicePort: 9443
-          wsHostname: "opco-websocket-sybylcloud.internal-lab.com"
-          httpHostname: "opco-gw-sybylcloud.internal-lab.com"
-          websubHostname: "opco-websub-sybylcloud.internal-lab.com"
+        # # OpCo Gw 
+        # - name: "OpCo Gateway"
+        #   type: "hybrid"
+        #   gatewayType: "Regular"
+        #   provider: "wso2"
+        #   visibility:
+        #   displayInApiConsole: true
+        #   description: "OpCo Gateway"
+        #   showAsTokenEndpointUrl: true
+        #   serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+        #   servicePort: 9443
+        #   wsHostname: "opco-websocket-sybylcloud.internal-lab.com"
+        #   httpHostname: "opco-gw-sybylcloud.internal-lab.com"
+        #   websubHostname: "opco-websub-sybylcloud.internal-lab.com"
 
-        # OpCoTz gateway
-        - name: "OpCoTz Gateway"
-          type: "hybrid"
-          gatewayType: "Regular"
-          provider: "wso2"
-          visibility:
-          displayInApiConsole: true
-          description: "OpCoTz gateway, Tanzania APIs exposed through this group PublicAPIXChange."
-          showAsTokenEndpointUrl: true
-          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
-          servicePort: 9443
-          wsHostname: "opcotz-websocket-sybylcloud.internal-lab.com"
-          httpHostname: "opcotz-gw-sybylcloud.internal-lab.com"
-          websubHostname: "opcotz-websub-sybylcloud.internal-lab.com"
-        # OpCo Mdgw 
-        - name: "OpCoMdgw Gateway"
-          type: "hybrid"
-          gatewayType: "Regular"
-          provider: "wso2"
-          visibility:
-          displayInApiConsole: true
-          description: "OpCoMdgw gateway, Madagascar APIs exposed through this group APIXChange."
-          showAsTokenEndpointUrl: true
-          serviceName: "opcomdg-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
-          servicePort: 9443
-          wsHostname: "opcomdg-websocket-sybylcloud.internal-lab.com"
-          httpHostname: "opcomdg-gw-sybylcloud.internal-lab.com"
-          websubHostname: "opcomdg-websub-sybylcloud.internal-lab.com"
+        # # OpCoTz gateway
+        # - name: "OpCoTz Gateway"
+        #   type: "hybrid"
+        #   gatewayType: "Regular"
+        #   provider: "wso2"
+        #   visibility:
+        #   displayInApiConsole: true
+        #   description: "OpCoTz gateway, Tanzania APIs exposed through this group PublicAPIXChange."
+        #   showAsTokenEndpointUrl: true
+        #   serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+        #   servicePort: 9443
+        #   wsHostname: "opcotz-websocket-sybylcloud.internal-lab.com"
+        #   httpHostname: "opcotz-gw-sybylcloud.internal-lab.com"
+        #   websubHostname: "opcotz-websub-sybylcloud.internal-lab.com"
+        # # OpCo Mdgw 
+        # - name: "OpCoMdgw Gateway"
+        #   type: "hybrid"
+        #   gatewayType: "Regular"
+        #   provider: "wso2"
+        #   visibility:
+        #   displayInApiConsole: true
+        #   description: "OpCoMdgw gateway, Madagascar APIs exposed through this group APIXChange."
+        #   showAsTokenEndpointUrl: true
+        #   serviceName: "opcomdg-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+        #   servicePort: 9443
+        #   wsHostname: "opcomdg-websocket-sybylcloud.internal-lab.com"
+        #   httpHostname: "opcomdg-gw-sybylcloud.internal-lab.com"
+        #   websubHostname: "opcomdg-websub-sybylcloud.internal-lab.com"
 
       gatewayNotification:
         enabled: true

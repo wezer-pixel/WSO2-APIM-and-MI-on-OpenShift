@@ -1,0 +1,52 @@
+
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "micro-integrator.labels" . | indent 4 }}
+spec:
+  selector:
+    deployment: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+  ports:
+    - port: {{ add 8290 .Values.wso2.config.portOffset -10 }}
+      targetPort: {{ add 8290 .Values.wso2.config.portOffset -10 }}
+      protocol: TCP
+      name: pass-through-http
+    - port: {{ add 8253 .Values.wso2.config.portOffset -10 }}
+      targetPort: {{ add 8253 .Values.wso2.config.portOffset -10 }}
+      protocol: TCP
+      name: pass-through-https
+    - port: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+      targetPort: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+      protocol: TCP
+      name: metrics
+    - port: {{ add 9164 .Values.wso2.config.portOffset -10 }}
+      targetPort: {{ add 9164 .Values.wso2.config.portOffset -10 }}
+      protocol: TCP
+      name: management
+    {{- if .Values.wso2.deployment.synapseTest.enabled }}
+    - port: {{ add 9008 .Values.wso2.config.portOffset -10 }}
+      targetPort: {{ add 9008 .Values.wso2.config.portOffset -10 }}
+      protocol: TCP
+      name: synapse-test
+    {{- end }}

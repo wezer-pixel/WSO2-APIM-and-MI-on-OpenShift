@@ -1,0 +1,275 @@
+# ------------------------------------------------------------------------------------
+# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 LLC. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#------------------------------------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "micro-integrator.labels" . | indent 4 }}
+  annotations:
+    checkov.io/skip1: CKV_K8S_22=suppress read-only file system check
+spec:
+  replicas: {{ .Values.wso2.deployment.replicas }}
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.wso2.deployment.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.wso2.deployment.strategy.rollingUpdate.maxUnavailable }}
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      deployment: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.wso2.deployment.annotations }}
+        {{- range $key, $value := .Values.wso2.deployment.annotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        checksum.mi.toml: {{ include (print $.Template.BasePath "/mi-conf.yaml") . | sha256sum }}
+        checksum.mi.log4j2.properties: {{ include (print $.Template.BasePath "/mi-log4j2-conf.yaml") . | sha256sum }}
+        checksum.mi.secret.properties: {{ include (print $.Template.BasePath "/mi-secret-conf.yaml") . | sha256sum }}
+        checksum.mi.entrypoint.sh: {{ include (print $.Template.BasePath "/mi-conf-entrypoint.yaml") . | sha256sum }}
+        {{- if .Values.wso2.deployment.securityContext.apparmor }}
+        container.apparmor.security.beta.kubernetes.io/wso2mi: "runtime/default"
+        {{- end }}
+      labels:
+        deployment: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+    spec:
+      {{- if and (eq "aws" .Values.provider) (.Values.aws.serviceAccountName) }}
+      serviceAccountName: {{ .Values.aws.serviceAccountName }}
+      {{- end }}
+      securityContext:
+        {{- if .Values.wso2.deployment.securityContext.enableRunAsUser }}
+        runAsUser: {{ .Values.wso2.deployment.securityContext.runAsUser }}
+        {{- end }}
+        {{- if .Values.wso2.deployment.securityContext.enableRunAsGroup }}
+        fsGroup: {{ .Values.wso2.deployment.securityContext.runAsGroup }}
+        {{- end }}
+        {{- if .Values.wso2.deployment.securityContext.seccompProfile.enabled }}
+        seccompProfile:
+          type: {{ .Values.wso2.deployment.securityContext.seccompProfile.type }}
+        {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: deployment
+                      operator: In
+                      values:
+                        - {{ template "resource.prefix" . }}-{{ .Release.Name }}
+                topologyKey: topology.kubernetes.io/zone
+      containers:
+        - name: wso2mi
+          image: "{{- if .Values.containerRegistry -}}{{ .Values.containerRegistry }}/{{ end }}{{ .Values.wso2.deployment.image.repository }}{{- if .Values.wso2.deployment.image.digest -}}@{{ .Values.wso2.deployment.image.digest }}{{- else -}}:{{ .Values.wso2.deployment.image.tag }}{{- end }}"
+          imagePullPolicy: {{ .Values.wso2.deployment.image.pullPolicy }}
+          args:
+            {{- if .Values.wso2.deployment.synapseTest.enabled }}
+            - "-DsynapseTest=true"
+            {{- end }}
+            {{- range .Values.wso2.deployment.cmdArgs }}
+            - "{{ . }}"
+            {{- end }}
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - nc -z localhost {{ add 8253 .Values.wso2.config.portOffset -10 }}
+            initialDelaySeconds: {{ .Values.wso2.deployment.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.wso2.deployment.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.wso2.deployment.probes.startup.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+            periodSeconds: {{ .Values.wso2.deployment.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+            initialDelaySeconds: {{ .Values.wso2.deployment.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.wso2.deployment.probes.readiness.periodSeconds }}
+          resources:
+            requests:
+              memory: {{ .Values.wso2.deployment.resources.requests.memory }}
+              cpu: {{ .Values.wso2.deployment.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.wso2.deployment.resources.limits.memory }}
+              cpu: {{ .Values.wso2.deployment.resources.limits.cpu }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            {{- if .Values.wso2.deployment.securityContext.seLinux.enabled }}
+            seLinuxOptions:
+              level: {{ .Values.wso2.deployment.securityContext.seLinux.level }}
+            {{- end }}
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: {{ add 8253 .Values.wso2.config.portOffset -10 }}
+              protocol: TCP
+            - containerPort: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+              protocol: TCP
+            - containerPort: {{ add 9164 .Values.wso2.config.portOffset -10 }}
+              protocol: TCP
+            {{- if .Values.wso2.deployment.synapseTest.enabled }}
+            - containerPort: {{ add 9008 .Values.wso2.config.portOffset -10 }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: JAVA_MEM_OPTS
+              value: "-Xms{{ .Values.wso2.deployment.resources.jvm.memory.xms }} -Xmx{{ .Values.wso2.deployment.resources.jvm.memory.xmx }}"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            {{- if .Values.wso2.deployment.envs }}
+            {{- range $key, $val := .Values.wso2.deployment.envs }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: wso2mi-toml
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/deployment.toml
+              subPath: deployment.toml
+            - name: wso2mi-log4j2-properties
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/log4j2.properties
+              subPath: log4j2.properties
+            {{- if .Values.wso2.deployment.mountCapps }}
+            - name: capps
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/deployment/server/carbonapps
+            {{- end }}
+            {{- if .Values.wso2.deployment.JKSSecretName }}
+              # Primary keystore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.keyStore.primary.fileName }}
+              subPath: {{ .Values.wso2.config.keyStore.primary.fileName }}
+              # Internal keystore - only mount if different from primary keystore
+            {{- if ne .Values.wso2.config.keyStore.internal.fileName .Values.wso2.config.keyStore.primary.fileName }}
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.keyStore.internal.fileName }}
+              subPath: {{ .Values.wso2.config.keyStore.internal.fileName }}
+            {{- if and (.Values.wso2.config.transport) (.Values.wso2.config.transport.http) (.Values.wso2.config.transport.http.nonBlocking) (.Values.wso2.config.transport.http.nonBlocking.listener) (.Values.wso2.config.transport.http.nonBlocking.listener.keystore) }}
+              # Transport listener keystore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.listener.keystore.fileName }}
+              subPath: {{ .Values.wso2.config.keyStore.transport.listener.fileName }}
+            {{- end }}
+            {{- if and (.Values.wso2.config.transport) (.Values.wso2.config.transport.http) (.Values.wso2.config.transport.http.nonBlocking) (.Values.wso2.config.transport.http.nonBlocking.sender) (.Values.wso2.config.transport.http.nonBlocking.sender.keystore) }}
+              # Transport sender keystore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.fileName }}
+              subPath: {{ .Values.wso2.config.keyStore.transport.sender.fileName }}
+            {{- end }}
+              # Primary Truststore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.trustStore.primary.fileName }}
+              subPath: {{ .Values.wso2.config.trustStore.primary.fileName }}
+            {{- if and (.Values.wso2.config.transport) (.Values.wso2.config.transport.http) (.Values.wso2.config.transport.http.nonBlocking) (.Values.wso2.config.transport.http.nonBlocking.listener) (.Values.wso2.config.transport.http.nonBlocking.listener.truststore) }}
+              # Transport listener Truststore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.listener.truststore.fileName }}
+              subPath: {{ .Values.wso2.config.trustStore.transport.listener.fileName }}
+            {{- end }}
+            {{- if and (.Values.wso2.config.transport) (.Values.wso2.config.transport.http) (.Values.wso2.config.transport.http.nonBlocking) (.Values.wso2.config.transport.http.nonBlocking.sender) (.Values.wso2.config.transport.http.nonBlocking.sender.truststore) }}
+              # Transport sender Truststore
+            - name: keystores
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.fileName }}
+              subPath: {{ .Values.wso2.config.trustStore.transport.sender.fileName }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.wso2.config.secureVault.enabled }}
+            - name: wso2mi-secrets-volume
+              mountPath: /mnt/secrets-store
+              readOnly: true
+            - name: wso2mi-secret-properties
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/security/secret-conf.properties
+              subPath: secret-conf.properties
+            {{- end }}
+            - name: wso2mi-entrypoint
+              mountPath: /home/wso2carbon/docker-entrypoint.sh
+              subPath: docker-entrypoint.sh
+            {{- if .Values.wso2.config.fileProperties }}
+            - name: wso2mi-file-properties
+              mountPath: /home/wso2carbon/wso2-config-volume/conf/file.properties
+              subPath: file.properties
+            {{- end }}
+      volumes:
+        - name: wso2mi-toml
+          configMap:
+            name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-toml
+        - name: wso2mi-log4j2-properties
+          configMap:
+            name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-log4j2-properties
+        {{- if .Values.wso2.deployment.JKSSecretName }}
+        - name: keystores
+          secret:
+            secretName: {{ .Values.wso2.deployment.JKSSecretName }}
+        {{- end }}
+        {{- if .Values.wso2.deployment.mountCapps }}
+        - name: capps
+          persistentVolumeClaim:
+            claimName: {{ .Values.wso2.deployment.cappsPvcName | default (printf "%s-%s-carbonapps" (include "resource.prefix" .) .Release.Name) }}
+        {{- end }}
+        - name: wso2mi-entrypoint
+          configMap:
+            name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-entrypoint
+            defaultMode: {{ .Values.wso2.deployment.configMaps.entryPoint.defaultMode }}
+        {{- if .Values.wso2.config.secureVault.enabled }}
+        - name: wso2mi-secrets-volume
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            {{- if eq "azure" .Values.provider }}
+            volumeAttributes:
+              secretProviderClass: {{ .Values.azure.keyVault.secretProviderClass }}
+            nodePublishSecretRef:
+              name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-secret-store-csi
+            {{- else if eq "gcp" .Values.provider }}
+            volumeAttributes:
+              secretProviderClass: {{ .Values.gcp.secretManager.secretProviderClass }}
+            nodePublishSecretRef:
+              name: {{ .Values.gcp.secretManager.serviceAccountKeySecret }}
+            {{- else if eq "aws" .Values.provider }}
+            volumeAttributes:
+              secretProviderClass: {{ .Values.aws.secretManager.secretProviderClass }}
+            {{- end }}
+        - name: wso2mi-secret-properties
+          configMap:
+            name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-secret-properties
+        {{- end }}
+        {{- if .Values.wso2.config.fileProperties }}
+        - name: wso2mi-file-properties
+          configMap:
+            name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-file-properties
+        {{- end }}
+      {{- if .Values.wso2.deployment.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.wso2.deployment.imagePullSecrets }}
+      {{- else if and .Values.wso2.subscription.username .Values.wso2.subscription.password }}
+      imagePullSecrets:
+        - name: wso2micro-integrator-deployment-creds
+      {{- end }}{{- end }}

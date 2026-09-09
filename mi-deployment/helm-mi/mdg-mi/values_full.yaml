@@ -1,0 +1,743 @@
+# -- Kubernetes cluster provider. Supported values: azure, aws
+provider: ""
+# -- Container registry
+containerRegistry: ""
+# AWS service configurations
+aws:
+  # -- AWS IAM service account name
+  serviceAccountName: ""
+  # -- AWS region
+  region: ""
+  # AWS Secret Manager configurations
+  secretManager:
+    # -- AWS Secret Manager secret provider class name
+    secretProviderClass: ""
+    secretIdentifiers:
+      internalKeystorePassword:
+        # -- Secret name for internal keystore password
+        secretName: ""
+        # -- Secret key for internal keystore password
+        secretKey: ""
+  storage:
+    # -- Storage provisioner
+    provisioner: "efs.csi.aws.com"
+    # -- Persistent volume storage class name
+    storageClass: ""
+    # -- Persistent volume storage capacity
+    capacity: ""
+    # -- EFS file system ID
+    fileSystemId: ""
+    # -- EFS file system access point ID for mounting the CApps
+    cAppAccessPoint: ""
+    # -- Directory permissions for access point root directory creation
+    directoryPerms: "0777"
+
+# Azure service configurations
+azure:
+  keyVault:
+    # -- Name of the target Azure Key Vault instance
+    name: ""
+    # -- Azure Secret Manager secret provider class name
+    secretProviderClass: ""
+    secretIdentifiers:
+      # -- Secret name for internal keystore password
+      internalKeystorePassword: ""
+    activeDirectory:
+      # -- Service Principal created for transacting with the target Azure Key Vault
+      # For advanced details refer to official documentation (https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/docs/service-principal-mode.md)
+      servicePrincipal:
+        # -- Azure AD application name for fetching secrets via CSI secret store driver
+        appId: ""
+        # -- Client secret of Azure AD application client
+        clientSecret: ""
+      # -- Azure Active Directory tenant ID of the target Key Vault
+      tenantId: ""
+    resourceManager:
+      # -- Subscription ID of the target Azure Key Vault
+      subscriptionId: ""
+      # -- Name of the Azure Resource Group to which the target Azure Key Vault belongs
+      resourceGroup: ""
+# GCP service configurations
+gcp:
+  # GCP Secret Manager configurations
+  secretManager:
+    # -- GCP Secret Manager secret provider class name
+    secretProviderClass: ""
+    # -- K8s secret name which contains the JSON keyfile for the service account used to access the GCP Secret Manager
+    serviceAccountKeySecret: ""
+    secretIdentifiers:
+      # -- Secret name for internal keystore password. Expected format is `projects/<PROJECT_ID>/secrets/<SECRET_NAME>/versions/<VERSION>`
+      internalKeystorePassword: ""
+  # Filestore configurations
+  storage:
+    # -- Persistent volume storage class name
+    storageClass: ""
+    # -- Persistent volume storage capacity
+    capacity: ""
+    # -- Volume handle of the GCP Filestore instance. Format `modeInstance/<zone>/<filestore-instance-name>/<filestore-share-name>`
+    volumeHandle: ""
+    volumeAttributes:
+      # -- Pre-provisioned Filestore instance IP
+      ip: ""
+      # -- Pre-provisioned Filestore instance share name
+      volume: ""
+
+wso2:
+  subscription:
+    # -- WSO2 subscription username
+    username: ""
+    # -- WSO2 subscription password
+    password: ""
+  ingress:
+    # -- Enable Ingress for MI
+    enabled: true
+    # -- Ingress class name
+    ingressClassName: ""
+    # -- (list) Ingress annotations
+    annotations:
+    # -- K8s TLS secret for configured hostname
+    tlsSecret: ""
+    ratelimit:
+      # -- Ingress rate limit
+      enabled: false
+      # -- Ingress ratelimit zone name
+      zoneName: ""
+      # -- Ingress ratelimit burst limit
+      burstLimit: ""
+  config:
+    # -- Port offset for Micro Integrator (https://apim.docs.wso2.com/en/latest/install-and-setup/setup/deployment-best-practices/changing-the-default-ports-with-offset/#changing-the-default-mi-ports)
+    portOffset: 10
+    admin:
+      # -- Super admin username
+      username: ""
+      # -- Super admin password
+      password: ""
+      # -- Create super admin account
+      createAdminAccount: false
+    # Refer https://apim.docs.wso2.com/en/latest/reference/config-catalog-mi/#external-user-store
+    userstore:
+      file:
+        # -- Enable/Disable file based userstore
+        enabled: true
+      rdbms:
+        # -- User Database URL
+        url: ""
+        # -- User Database username
+        username: ""
+        # -- User Database password
+        password: ""
+        jdbc:
+          # -- JDBC driver class name of the User Database
+          driver: ""
+          # -- (list) JDBC connection pool parameters of the User Database
+          poolParameters:
+      ldap:
+        type: "read_only_ldap"
+        class: "org.wso2.micro.integrator.security.user.core.ldap.ReadOnlyLDAPUserStoreManager"
+        connectionUrl: ""
+        connectionName: ""
+        connectionPassword: ""
+        anonymousBind: false
+        userSearchBase: ""
+        userNameAttribute: ""
+        userNameSearchFilter: ""
+        userNameListFilter: ""
+        displayNameAttribute: ""
+        readGroups: true
+        groupSearchBase: ""
+        groupNameAttribute: ""
+        groupNameSearchFilter: ""
+        groupNameListFilter: ""
+        membershipAttribute: ""
+        backLinksEnabled: false
+        usernameJavaRegex: "[a-zA-Z0-9._\\-|//]{3,30}$"
+        rolenameJavaRegex: "[a-zA-Z0-9._\\-|//]{3,30}$"
+        passwordJavaRegex: "^[\\S]{5,30}$"
+        scimEnabled: false
+        passwordHashMethod: "PLAIN_TEXT"
+        multiAttributeSeparator: ","
+        maxUserNameListLength: 100
+        maxRoleNameListLength: 100
+        userRolesCacheEnabled: true
+        connectionPoolingEnabled: true
+        ldapConnectionTimeout: 5000
+        # -- (int)
+        readTimeout:
+        # -- (int)
+        retryAttempts:
+        replaceEscapeCharactersAtUserLogin: true
+        readOnly: false
+    secureVault:
+      # -- Enable/Disable secure vault
+      enabled: false
+    # -- Enable/Disable coordination
+    coordination:
+      # -- Node ID for coordination
+      nodeId: ""
+      rdbms:
+        # -- Coordination Database URL
+        url: ""
+        # -- Coordination Database username
+        username: ""
+        # -- Coordination Database password
+        password: ""
+        jdbc:
+          # -- JDBC driver class name of the Coordination Database
+          driver: ""
+          # -- (list) JDBC connection pool parameters of the Coordination Database
+          poolParameters:
+    keyStore:
+      primary:
+        # -- Primary keystore file name
+        fileName: "wso2carbon.jks"
+        # -- Primary keystore alias
+        alias: "wso2carbon"
+        # -- Primary keystore password
+        password: ""
+        # -- Primary keystore key password
+        keyPassword: ""
+      internal:
+        # -- Internal keystore file name
+        fileName: "wso2carbon.jks"
+        # -- Internal keystore alias
+        alias: "wso2carbon"
+        # -- Internal keystore password
+        password: ""
+        # -- Internal keystore key password
+        keyPassword: ""
+    trustStore:
+      primary:
+        # -- Primary truststore file name
+        fileName: "client-truststore.jks"
+        # -- Primary truststore password
+        password: ""
+    icp:
+      # -- ICP URL
+      url: "https://{hostname/ip}:{port}/dashboard/api/"
+      # -- The time interval (in seconds) between two heartbeats sent from the Micro Integrator to the ICP server
+      heartbeatInterval: 5
+      # -- The group ID of the Micro Integrator deployment
+      # @default -- release name
+      groupId: ""
+      # -- The node ID of the Micro Integrator deployment
+      # @default -- pod name
+      nodeId: ""
+      # -- The service name of the Micro Integrator
+      managementHostname: ""
+      # -- If communicating via Ingress, use the following configuration:
+      # managementHostname = "<INGRESS_HOSTNAME>"
+      # -- If communicating via Service instead, use the following configuration:
+      # managementHostname = "<SERVICE_NAME>"
+      # management_port = <SERVICE_PORT>
+      # -- The management port of the Micro Integrator
+      managementPort: 9164
+    # -- Required if you want the Micro Integrator to publish integation services to the Service Catalog in the API Publisher (https://apim.docs.wso2.com/en/4.1.0/tutorials/integration-tutorials/service-catalog-tutorial/#step-3-configure-the-micro-integrator)
+    serviceCatalog:
+      # -- Enable/Disable service catalog
+      enabled: false
+      # -- API Manager runtime URL. (https://{hostname/ip}:{port})
+      apimHost: ""
+      # -- User name for signing in to the API Manager runtime
+      username: ""
+      # -- Password for signing in to the API Manager runtime
+      password: ""
+    transport:
+      # Refer https://apim.docs.wso2.com/en/latest/reference/config-catalog-mi/#vfs-transport
+      vfs:
+        listener:
+          enable: true
+          keystore:
+            fileName: "wso2carbon.jks"
+            type: "JKS"
+            password: ""
+            keyPassword: ""
+            alias: "wso2carbon"
+          # -- (list) List of custom parameters for VFS listener
+          customParameters:
+        sender:
+          enable: true
+          # -- (list) List of custom parameters for VFS sender
+          customParameters:
+      jndi:
+        # -- List of JNDI connection factories
+        connectionFactories:
+        # -- JNDI connection factory name
+        - name: ""
+          # -- JNDI connection factory url
+          url: ""
+        # -- List of topics that are defined in the JMS broker
+        topic:
+        # -- JNDI topic name
+        - jndiName: ""
+          # -- Actual topic name
+          physicalName: ""
+        # -- List of queues that are defined in the JMS broker
+        queue:
+        # -- JNDI queue name
+        - jndiName: ""
+          # -- Actual queue name
+          physicalName: ""
+      rabbitmq:
+        # -- RabbitMQ Sender configurations in blocking mode
+        sender:
+        # -- RabbitMQ Sender name in blocking mode
+        - name: ""
+          # -- (list) RabbitMQ Sender parameters in blocking mode (https://apim.docs.wso2.com/en/4.1.0/reference/config-catalog-mi/#rabbitmq-sender)
+          parameters:
+        # -- RabbitMQ Listener configurations in blocking mode
+        listener:
+        # -- RabbitMQ Listener name in blocking mode
+        - name: ""
+          # -- (list) RabbitMQ Listener parameters in blocking mode (https://apim.docs.wso2.com/en/4.1.0/reference/config-catalog-mi/#rabbitmq-listener)
+          parameters:
+      jms:
+        # -- JMS Sender configurations in blocking mode
+        sender:
+        # -- JMS Sender name in blocking mode
+        - name: ""
+          # -- JMS Sender parameters in blocking mode
+          parameters:
+            initial_naming_factory: ""
+            provider_url: ""
+        # -- JMS Listener configurations in blocking mode
+        listener:
+        # -- JMS Listener name in blocking mode
+        - name: ""
+          # -- JMS Listener parameters in blocking mode
+          parameters:
+            initial_naming_factory: ""
+            provider_url: ""
+            session_transaction: true
+      http:
+        blocking:
+          listener:
+            enable: true
+            port: 8280
+            hostname: ""
+            originServer: ""
+            requestTimeout: ""
+            requestTcpNoDelay: ""
+            requestCoreThreadPoolSize: ""
+            requestMaxThreadPoolSize: ""
+            threadKeepaliveTime: ""
+            threadKeepaliveTimeUnit: ""
+          sender:
+            enable: true
+            enableClientCaching: true
+            transferEncoding: "chunked"
+            defaultConnectionsPerHost: 200
+            omitSoap12Action: true
+            soTimeout: 60000
+            proxyHost: ""
+            # -- (int)
+            proxyPort:
+            securedEnable: true
+            securedEnableClientCaching: true
+            securedTransferEncoding: "chunked"
+            securedDefaultConnectionsPerHost: 200
+            securedOmitSoap12Action: true
+            securedSoTimeout: 60000
+            securedProxyHost: ""
+            # -- (int)
+            securedProxyPort:
+        nonBlocking:
+          # -- This is the maximum period of inactivity between two consecutive data packets, specified in milliseconds
+          socketTimeout: 180000
+          # -- number of core threads used by the executor pool
+          coreWorkerPoolSize: 400
+          # -- This is the maximum number of threads in the worker thread pool
+          maxWorkerPoolSize: 400
+          # -- Defines the length of the queue that is used to hold runnable tasks to be executed by the worker pool
+          workerPoolQueueLength: -1
+          # -- Memory buffer allocated when reading data into the memory from the underlying socket/file channels
+          ioBufferSize: 16384
+          # -- Maximum number of connections allowed per host port
+          maxHttpConnectionPerHostPort: 32767
+          # -- Preserves the HTTP user agent header
+          preserveHttpUserAgent: false
+          preserveHttpServerName: true
+          # -- Header field/s of messages passing through the EI that need to be preserved
+          preserveHttpHeaders: ["Content-Type"]
+          # -- Enables/disables backend HTTP connection close after the request is served
+          disableConnectionKeepalive: false
+          # -- If this property is enabled and the payload exceeds the size specified by the 'maxMessageSizeBytes' property, the Micro Integrator will discontinue reading the input stream
+          enableMessageSizeValidation: false
+          # -- If the size of the payload exceeds this value, the Micro Integrator will discontinue reading the input stream. Only applicable if the enableMessageSizeValidation property is enabled
+          maxMessageSizeBytes: 2147483647
+          # -- Restrict the number of simultaneously opened connections
+          maxOpenConnections: -1
+          # -- This property validates badly formed XML messages by building the whole XML document
+          forceXmlValidation: false
+          # -- Validates JSON messages by parsing the input message
+          forceJsonValidation: false
+          reverseProxyMode: false
+          # Refer https://apim.docs.wso2.com/en/latest/reference/config-catalog-mi/#https-transport-non-blocking-mode
+          listener:
+            enable: true
+            port: 8280
+            wsdlEprPrefix: ""
+            bindAddress: ""
+            securedEnable: true
+            securedPort: 8243
+            securedWsdlEprPrefix: ""
+            securedBindAddress: ""
+            securedProtocols: "TLSv1,TLSv1.1,TLSv1.2"
+            verifyClient: ""
+            preferredCiphers: "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+            certificateRevocationVerifierEnable: false
+            certificateRevocationCacheSize: 1024
+            certificateRevocationCacheDelay: 1000
+            sslProfile:
+              filePath: "conf/sslprofiles/listenerprofiles.xml"
+              readInterval: 30000
+            keystore:
+              fileName: "wso2carbon.jks"
+              type: "JKS"
+              password: ""
+              keyPassword: ""
+            truststore:
+              fileName: "client-truststore.jks"
+              type: "JKS"
+              password: ""
+          # Refer https://apim.docs.wso2.com/en/latest/reference/config-catalog-mi/#https-transport-non-blocking-mode
+          sender:
+            enable: true
+            warnOnHttp500: ""
+            proxyHost: ""
+            proxyPort:
+            securedProxyHost: ""
+            securedProxyPort:
+            nonProxyHosts: ""
+            hostnameVerifier: ""
+            securedProtocols: ""
+            certificateRevocationVerifierEnable: false
+            certificateRevocationCacheSize: 1024
+            certificateRevocationCacheDelay: 1000
+            securedEnable: true
+            sslProfile:
+              filePath: "conf/sslprofiles/senderprofiles.xml"
+              readInterval: 30000
+            keystore:
+              fileName: "wso2carbon.jks"
+              type: "JKS"
+              password: ""
+              keyPassword: ""
+            truststore:
+              fileName: "client-truststore.jks"
+              type: "JKS"
+              password: ""
+    # Refer https://apim.docs.wso2.com/en/latest/reference/config-catalog-mi/#message-mediation
+    mediation:
+      synapse:
+        coreThreads: 20
+        maxThreads: 100
+        threadsQueueLength: 10
+        globalTimeoutInterval: 120000
+        enableXpathDomFailover: true
+        tempDataChunkSize: 3072
+        commandDebuggerPort: 9005
+        eventDebuggerPort: 9006
+        scriptMediatorPoolSize: 15
+        enableXmlNil: false
+        disableAutoPrimitiveRegex: "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+        disableCustomReplaceRegex: "@@@"
+        enableNamespaceDeclaration: false
+        buildValidNcName: false
+        enableAutoPrimitive: false
+        jsonOutAutoArray: false
+        preserveNamespaceOnXmlToJson: false
+      statistics:
+        enableClean: true
+        cleanInterval: 1000
+      flow:
+        statistics:
+          enable: false
+          captureAll: false
+        tracer:
+          collectPayloads: false
+          collectMediationProperties: false
+      inbound:
+        coreThreads: 20
+        maxThreads: 100
+        portOffsetEnable: false
+      internalHttpApiEnable: true
+      internalHttpApiPort: 9191
+      internalHttpsApiPort: 9154
+    opentelemetry:
+      # -- Enable/Disable OpenTelemetry
+      enable: false
+      # -- Enable logs
+      logs:
+      # -- OpenTelemetry tracing system. Supported values: jaeger, zipkin, log and otlp
+      type:
+      # -- Hostname of the OpenTelemetry tracing system
+      host:
+      # -- Port of the OpenTelemetry tracing system
+      port:
+      # -- Url of the OpenTelemetry tracing system. Instead of ‘host’ and ‘port’, ‘url’ can be used
+      url:
+    analytics:
+      # -- Enable/Disable analytics
+      enabled: false
+      # -- Analytics publisher (Publisher types supported are log and databridge)
+      publisher: "log"
+      # -- An identifier that will be published with the analytic
+      id: ""
+      # -- Prefix added when Elasticsearch analytics are being published
+      prefix: "SYNAPSE_ANALYTICS_DATA"
+      # -- Enable/Disable publishing API analytics data
+      apiAnalytics: true
+      # -- Enable/Disable publishing proxy service analytics data
+      proxyServiceAnalytics: true
+      # -- Enable/Disable publishing sequence analytics data
+      sequenceAnalytics: true
+      # -- Enable/Disable publishing endpoint analytics data
+      endpointAnalytics: true
+    # -- (list) List of synapse properties
+    synapseProperties:
+    # -- (list) List of synapse handlers with the name and the implementation class
+    synapseHandlers:
+    - name: ""
+      class: ""
+    messageFormatters:
+      # -- (list) Required for configuring the message formatting implementation that is used for formatting messages that are sent out of the Micro Integrator in non-blocking mode
+      nonBlocking:
+        formUrlencoded: "org.apache.synapse.commons.formatters.XFormURLEncodedFormatter"
+        multipartFormData: "org.apache.axis2.transport.http.MultipartFormDataFormatter"
+        applicationXml: "org.apache.axis2.transport.http.ApplicationXMLFormatter"
+        textXml: "org.apache.axis2.transport.http.SOAPMessageFormatter"
+        soapXml: "org.apache.axis2.transport.http.SOAPMessageFormatter"
+        textPlain: "org.apache.axis2.format.PlainTextFormatter"
+        applicationJson: "org.wso2.micro.integrator.core.json.JsonStreamFormatter"
+        jsonBadgerfish: "org.apache.axis2.json.JSONBadgerfishMessageFormatter"
+        textJavascript: "org.apache.axis2.json.JSONMessageFormatter"
+        octetStream: "org.wso2.carbon.relay.ExpandingMessageFormatter"
+        applicationBinary: "org.apache.axis2.format.BinaryFormatter"
+      # -- (list) Required for configuring the message formatting implementation that is used for formatting messages that are sent out of the Micro Integrator in blocking mode
+      blocking:
+        formUrlencoded: "org.apache.synapse.commons.formatters.XFormURLEncodedFormatter"
+        multipartFormData: "org.apache.axis2.transport.http.MultipartFormDataFormatter"
+        applicationXml: "org.apache.axis2.transport.http.ApplicationXMLFormatter"
+        textXml: "org.apache.axis2.transport.http.SOAPMessageFormatter"
+        soapXml: "org.apache.axis2.transport.http.SOAPMessageFormatter"
+        textPlain: "org.apache.axis2.format.PlainTextFormatter"
+        applicationJson: "org.wso2.micro.integrator.core.json.JsonStreamFormatter"
+        jsonBadgerfish: "org.apache.axis2.json.JSONBadgerfishMessageFormatter"
+        textJavascript: "org.apache.axis2.json.JSONMessageFormatter"
+        octetStream: "org.wso2.carbon.relay.ExpandingMessageFormatter"
+        applicationBinary: "org.apache.axis2.format.BinaryFormatter"
+      custom:
+        # -- (list) List of custom message formatter implementation class and the selected content types to which the formatter should apply in non-blocking mode
+        nonBlocking:
+        - contentType: ""
+          class: ""
+        # -- (list) List of custom message formatter implementation class and the selected content types to which the formatter should apply in blocking mode
+        blocking:
+        - contentType: ""
+          class: ""
+    messageBuilders:
+      # -- (list) Required for configuring the message builder implementation that is used to build messages that are received by the Micro Integrator in non-blocking mode
+      nonBlocking:
+        applicationXml: "org.apache.axis2.builder.ApplicationXMLBuilder"
+        formUrlencoded: "org.apache.synapse.commons.builders.XFormURLEncodedBuilder"
+        multipartFormData: "org.apache.axis2.builder.MultipartFormDataBuilder"
+        textPlain: "org.apache.axis2.format.PlainTextBuilder"
+        applicationJson: "org.wso2.micro.integrator.core.json.JsonStreamBuilder"
+        jsonBadgerfish: "org.apache.axis2.json.JSONBadgerfishOMBuilder"
+        textJavascript: "org.apache.axis2.json.JSONBuilder"
+        octetStream: "org.wso2.carbon.relay.BinaryRelayBuilder"
+        applicationBinary: "org.apache.axis2.format.BinaryBuilder"
+      # -- (list) Required for configuring the message builder implementation that is used to build messages that are received by the Micro Integrator in blocking mode
+      blocking:
+        applicationXml: "org.apache.axis2.builder.ApplicationXMLBuilder"
+        formUrlencoded: "org.apache.synapse.commons.builders.XFormURLEncodedBuilder"
+        multipartFormData: "org.apache.axis2.builder.MultipartFormDataBuilder"
+        textPlain: "org.apache.axis2.format.PlainTextBuilder"
+        applicationJson: "org.wso2.micro.integrator.core.json.JsonStreamBuilder"
+        jsonBadgerfish: "org.apache.axis2.json.JSONBadgerfishOMBuilder"
+        textJavascript: "org.apache.axis2.json.JSONBuilder"
+        octetStream: "org.wso2.carbon.relay.BinaryRelayBuilder"
+        applicationBinary: "org.apache.axis2.format.BinaryBuilder"
+      custom:
+        # -- (list) List of custom message builder implementation class and the selected content types to which the builder should apply in non-blocking mode
+        nonBlocking:
+        - contentType: ""
+          class: ""
+        # -- (list) List of custom message builder implementation class and the selected content types to which the builder should apply in blocking mode
+        blocking:
+        - contentType: ""
+          class: ""
+    # -- ManagementAPI related configurations. (https://apim.docs.wso2.com/en/latest/install-and-setup/setup/mi-setup/security/securing_management_api/)
+    managementApi:
+      cors:
+        enabled: true
+        allowedOrigins: "*"
+        allowedHeaders: "Authorization, Content-Type"
+      authorizationHandler:
+        enable: true
+        # -- (list) Enable authorization for additional resources
+        resources: ["/users"]
+      jwtTokenSecurityHandler:
+        enable: true
+        tokenStoreConfig:
+          maxSize: 200
+          cleanUpInterval: 600
+          removeOldestTokenOnOverflow: true
+        tokenConfig:
+          expiry: 3600
+          size: 2048
+    # -- (list) List of properties
+    fileProperties:
+    vault:
+      # -- HashiCorp Vault configurations
+      hashicorp:
+        # -- HashiCorp Vault URL
+        address:
+        # -- Static Token authentication
+        rootToken:
+        # -- AppRole authentication roleId
+        roleId:
+        # -- AppRole authentication secretId
+        secretId:
+        # -- All resources fetched from the HashiCorp vault are cached for this number of milliseconds
+        cacheableDuration: 15000
+        # -- The version of the HashiCorp secret engine
+        engineVersion: 2
+        # -- The namespace value specified here applies globally to HashiCorp secrets in all synapse configurations
+        namespace:
+        # -- The Trust store that is used for SSL communication with the HashiCorp server
+        trustStoreFile:
+        # -- The Key store that is used for SSL communication with the HashiCorp server
+        keyStoreFile:
+        # -- The password of the keystore file that is used for SSL communication
+        keyStorePassword:
+  deployment:
+    securityContext:
+      # -- Enable/Disable AppArmor (https://kubernetes.io/docs/tutorials/security/apparmor/)
+      apparmor: true
+      # -- Enable/Disable seccomp profile (https://kubernetes.io/docs/tutorials/security/seccomp/)
+      seccompProfile:
+        # -- Enable/Disable seccomp profile
+        enabled: true
+        # -- Seccomp profile type
+        type: RuntimeDefault
+      enableRunAsUser: true
+      # -- The UID to run the entrypoint of the container process
+      runAsUser: "10802"
+      enableRunAsGroup: false
+      # -- The GID to run the entrypoint of the container process
+      runAsGroup: "10802"
+      seLinux:
+        enabled: false
+        level: "s0:c26,c0"
+    # -- Hostname of the Micro Integrator deployment
+    hostname: ""
+    # -- Build version of the Micro Integrator
+    BuildVersion: "4.4.0"
+    # -- K8s secret name which contains JKS files
+    JKSSecretName: ""
+    # -- imagePullSecrets for private docker registry
+    imagePullSecrets: ""
+    image:
+      # -- Container image repository name
+      repository: ""
+      # -- Container image digest
+      digest: ""
+      # -- Container image tag
+      tag: ""
+      # -- Container image pull policy. Refer (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
+      pullPolicy: Always
+
+    # -- Kubernetes Probes (https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+    probes:
+      # -- Startup probe executed prior to Liveness Probe taking over
+      startup:
+        # -- Number of seconds after the container has started before startup probes are initiated
+        initialDelaySeconds: 5
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 3
+        # -- Number of attempts
+        failureThreshold: 40
+      # -- Indicates whether the container is running
+      liveness:
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 10
+        # -- Indicates whether the container is ready to service requests
+      readiness:
+        # -- Number of seconds after the container has started before readiness probes are initiated
+        initialDelaySeconds: 60
+        # -- How often (in seconds) to perform the probe
+        periodSeconds: 1
+
+    # -- Number of deployment replicas
+    replicas: 1
+    # -- Horizontal Pod Autoscaler (HPA) configurations (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+    hpa:
+      # -- Enable/Disable Horizontal Pod Autoscaler (HPA)
+      enabled: false
+      # -- Min replica count for HPA
+      minReplicas: 1
+      # -- Max replica count for HPA
+      maxReplicas: 2
+      # -- Average CPU utilization percentage for HPA
+      cpuUtilizationPercentage: 75
+      # -- Average memory utilization percentage for HPA
+      memoryUtilizationPercentage: 75
+    # -- Pod disruption budget configurations (https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
+    pdb:
+      # -- Enable/Disable pod disruption budget
+      enabled: false
+      # -- Min available pods for pod disruption budget
+      minAvailable: 1
+
+    strategy:
+      rollingUpdate:
+        # -- The maximum number of pods that can be scheduled above the desired number of pods.
+        maxSurge: 1
+        # -- The maximum number of pods that can be unavailable during the update.
+        maxUnavailable: 0
+
+    # These are the minimum resource recommendations for running WSO2 Micro Integrator
+    resources:
+      requests:
+        # -- The minimum amount of memory that should be allocated for a Pod
+        memory: "512Mi"
+        # -- The minimum amount of CPU that should be allocated for a Pod
+        cpu: "500m"
+      limits:
+        # -- The maximum amount of memory that should be allocated for a Pod
+        memory: "1Gi"
+        # -- The maximum amount of CPU that should be allocated for a Pod
+        cpu: "1000m"
+
+      # JVM settings
+      # These are the resource allocation configurations associated with the JVM
+      jvm:
+        memory:
+          # -- The minimum amount of memory that should be allocated for the JVM
+          xms: "512m"
+          # -- The maximum amount of memory that should be allocated for the JVM
+          xmx: "1024m"
+
+    # -- (list) Environment variables for the Micro integrator deployment
+    envs:
+    # wso2_oh_sample_baseUrl: "http://localhost:8290/services/odata"
+    
+    # -- (list) Annotations for Micro Integrator deployment
+    annotations:
+      # prometheus.io/wso2-path: "/metric-service/metrics"
+      # prometheus.io/wso2-port: "9201"
+      # prometheus.io/wso2-scrape: "true"
+
+    # Configure synapse testing
+    synapseTest:
+      # -- Enable/Disable synapse testing
+      enabled: false
+    # -- Incase the CApps are not burned into the docker image, set the following to `true` to mount the CApps using a persistent volume
+    mountCapps: false
+    # -- List of Command line arguments passed to startup script
+    cmdArgs:
+    # -- Set UNIX permissions over the startup scripts
+    configMaps:
+      entryPoint:
+        defaultMode: "0407"
