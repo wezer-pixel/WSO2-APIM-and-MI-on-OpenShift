@@ -553,6 +553,36 @@ wso2:
       gateway:
         # -- APIM Gateway environments
         environments:
+        - name: "Default"
+          type: "hybrid"
+          gatewayType: "Regular"
+          provider: "wso2"
+          visibility:
+          displayInApiConsole: true
+          description: "This is a hybrid gateway that handles both production and sandbox token traffic."
+          showAsTokenEndpointUrl: true
+          serviceName: "wso2am-gateway-service"
+          servicePort: 9443
+          wsHostname: "group-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "group-gw-sybylcloud.internal-lab.com"
+          websubHostname: "group-websub-sybylcloud.internal-lab.com"
+          
+        # OpCo Gw 
+        - name: "OpCo Gateway"
+          type: "hybrid"
+          gatewayType: "Regular"
+          provider: "wso2"
+          visibility:
+          displayInApiConsole: true
+          description: "OpCo Gateway"
+          showAsTokenEndpointUrl: true
+          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+          servicePort: 9443
+          wsHostname: "opco-websocket-sybylcloud.internal-lab.com"
+          httpHostname: "opco-gw-sybylcloud.internal-lab.com"
+          websubHostname: "opco-websub-sybylcloud.internal-lab.com"
+
+        # OpCoTz gateway
         - name: "OpCoTz Gateway"
           type: "hybrid"
           gatewayType: "Regular"
@@ -561,7 +591,7 @@ wso2:
           displayInApiConsole: true
           description: "OpCoTz gateway, Tanzania APIs exposed through this group PublicAPIXChange."
           showAsTokenEndpointUrl: true
-          serviceName: "opcotz-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
+          serviceName: "opco-gw-wso2am-universal-gw-service.wso2-dist.svc.cluster.local"
           servicePort: 9443
           wsHostname: "opcotz-websocket-sybylcloud.internal-lab.com"
           httpHostname: "opcotz-gw-sybylcloud.internal-lab.com"
