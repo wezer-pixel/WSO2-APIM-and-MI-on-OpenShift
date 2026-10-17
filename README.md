@@ -1,134 +1,206 @@
-# WSO2 APIM and MI on Vanilla Kubernetes
+# WSO2 API Manager 4.7.0 Distributed Deployment (Pattern 3) + Micro Integrator 4.4.0
 
-This branch contains the Helm charts, Docker customizations, and supporting assets for deploying WSO2 API Manager 4.7.0 and WSO2 Micro Integrator 4.4.0 on a standard, Vanilla Kubernetes cluster.
+Production-grade deployment repository for **WSO2 API Manager 4.7.0** in a **Pattern 3 Distributed Architecture** (Control Plane, Gateway, Traffic Manager) and **WSO2 Micro Integrator 4.4.0** on Kubernetes.
 
 ---
 
-## Repository Structure
+## 1. Architectural Overview (Pattern 3 Distributed)
+
+```
+                            Sybyl Enterprise Network
+                                        │
+                         [DNS: *.sybyl.int (Internal CA)]
+                                        │
+                                        ▼
+                      Envoy Gateway (Gateway API v1)
+                    Port 443 / NodePort 31542 (HTTPS)
+                                        │
+        ┌───────────────────────────────┼───────────────────────────────┐
+        │ (*.sybyl.int)                 │ (gw.sybyl.int)                │ (websocket / websub)
+        ▼                               ▼                               ▼
+Control Plane (CP)              Universal Gateway (GW)          Async Gateways
+2 Instances (Active-Active)     2 Instances (Active-Active)     - websocket.sybyl.int
+- publisher.sybyl.int           - API runtime traffic           - websub.sybyl.int
+- devportal.sybyl.int           - Port 8243 (HTTPS)
+- admin.sybyl.int               - Port 8280 (HTTP)
+        │                               │
+        │ Artifacts sync                │ Throttling events
+        ▼                               ▼
+NFS CSI Shared Volume           Traffic Manager (TM)
+(/home/wso2carbon/              2 Instances (Active-Active)
+ wso2-shared-volume)            - Event processor / Siddhi
+                                - Port 9763 / 9611 / 9711
+                                        │
+        └───────────────────────────────┼───────────────────────────────┘
+                                        ▼
+                          External PostgreSQL 16/18
+                                172.18.10.143:5432
+                         ├── apim_dist_db   (APIM metadata)
+                         └── shared_dist_db (Registry & Userstore)
+```
+
+### Components & Sizing
+| Role | Pod Count | CPU (Req / Limit) | Memory (Req / Limit) | JVM Memory | Storage / Mounts |
+|---|---|---|---|---|---|
+| **Control Plane (CP)** | 2 | 1.5 vCPU / 3 vCPU | 3 Gi / 5 Gi | `-Xms2048m -Xmx2560m` | NFS CSI Shared PVC (`wso2am-cp-shared-pvc`) |
+| **Gateway (GW)** | 2 | 1 vCPU / 2 vCPU | 2 Gi / 4 Gi | `-Xms1536m -Xmx2048m` | Ephemeral |
+| **Traffic Manager (TM)** | 2 | 0.5 vCPU / 1 vCPU | 1.5 Gi / 2.5 Gi | `-Xms1024m -Xmx1280m` | Ephemeral |
+
+---
+
+## 2. Cluster Topology & Infrastructure Details
+
+- **Kubernetes Version**: `v1.37.1` (containerd `2.4.2`, Ubuntu 26.04)
+- **Nodes**:
+  - `idpk8smaster1` (`172.18.10.216`): Control Plane Master
+  - `idpk8smaster2` (`172.18.10.55`): Control Plane Master
+  - `idpk8smaster3` (`172.18.10.225`): Control Plane Master
+  - `idpk8swkr1` (`172.18.10.74`): Worker Node 1
+  - `idpk8swkr2` (`172.18.10.40`): Worker Node 2
+- **Namespace**: `wso2-apim`
+- **Ingress Controller**: Envoy Gateway (`v1.2.x+`) using Kubernetes Gateway API (`gateway.networking.k8s.io/v1`)
+- **Shared Storage**: NFS CSI Driver (`nfs.csi.k8s.io`) pointing to `172.18.10.143:/srv/nfs/wso2-apim-shared`
+
+---
+
+## 3. Hostnames & Endpoints
+
+| Service | Public / Internal Hostname | Routing Path | Target Component |
+|---|---|---|---|
+| **Publisher Portal** | `https://publisher.sybyl.int/publisher` | Envoy HTTPRoute | Control Plane (Port 9443) |
+| **Developer Portal** | `https://devportal.sybyl.int/devportal` | Envoy HTTPRoute | Control Plane (Port 9443) |
+| **Admin Portal** | `https://admin.sybyl.int/admin` | Envoy HTTPRoute | Control Plane (Port 9443) |
+| **API Gateway (HTTPS)** | `https://gw.sybyl.int` | Envoy HTTPRoute | Gateway (Port 8243) |
+| **WebSocket Gateway** | `wss://websocket.sybyl.int` | Envoy HTTPRoute | Gateway (Port 9099) |
+| **WebSub Gateway** | `https://websub.sybyl.int` | Envoy HTTPRoute | Gateway (Port 9021) |
+| **Traffic Manager** | `tm.sybyl.int` (Internal cluster) | ClusterIP Service | Traffic Manager (Port 9763) |
+
+---
+
+## 4. Repository Structure
 
 ```text
-WSO2-APIM-and-MI-on-Vanilla-K8s/
-├── apim-deployment/               # API Manager deployment
-│   ├── apim/                      # Docker customization and database setup
-│   │   ├── Dockerfile             # Custom APIM image (MySQL driver integration)
-│   │   ├── DB_SETUP.md            # Database setup guide
-│   │   ├── mysql.yaml             # In-cluster MySQL manifest (dev/demo)
-│   │   ├── db-scripts/            # Schema scripts for wso2amdb and wso2shareddb
-│   │   ├── keystores/             # Source keystore files
-│   │   └── lib/                   # MySQL JDBC driver
-│   └── helm-apim/                 # Helm charts
-│       ├── all-in-one/            # All-in-one deployment chart
-│       ├── distributed/           # Distributed deployment charts
-│       │   ├── control-plane/
-│       │   ├── gateway/
-│       │   ├── key-manager/
-│       │   └── traffic-manager/
-│       └── docs/                  # Deployment pattern reference configs
-│
-└── mi-deployment/                 # Micro Integrator deployment
-    ├── agency-intg/               # Integration project source
-    │   ├── Dockerfile             # Custom MI image (baked .car files)
-    │   ├── carbonapps/            # Compiled .car files
-    │   ├── conf/                  # deployment.toml, log4j2, file.properties
-    │   └── libs/                  # Custom JARs
-    └── helm-mi/
-        └── mi/                    # Helm chart for WSO2 MI
-            ├── carbonapps/        # .car files (dev/test)
-            ├── confs/             # deployment.toml, log4j2.properties
-            ├── security/          # Keystore files (not committed)
-            ├── templates/         # Kubernetes manifest templates
-            ├── mi-pvcs.yaml       # Manual PVC & PV definitions (NFS)
-            └── values.yaml        # Main configuration (not committed)
+.
+├── Kubernetes production design WSO2 APIM Pattern 3 + MI.md  # Infrastructure design spec
+├── README.md                                                 # This file
+├── apim-deployment/
+│   ├── apim/                                                 # Keystores & DB schema scripts
+│   │   ├── apim-secrets/                                     # Source keystores for JKS secrets
+│   │   └── db-scripts/                                       # PostgreSQL database scripts
+│   └── helm-apim-4.5/
+│       └── distributed/                                      # Active Pattern 3 Helm Charts
+│           ├── control-plane/                                # Control Plane Chart
+│           │   ├── confs/                                    # deployment.toml & entrypoints
+│           │   ├── templates/                                # Deployments, HTTPRoutes, PDB, NFS PVC
+│           │   └── values.yaml                               # CP Values
+│           ├── gateway/                                      # Gateway Chart
+│           │   ├── confs/                                    # deployment.toml & entrypoints
+│           │   ├── templates/                                # Deployments, HTTPRoutes, PDB
+│           │   └── values.yaml                               # GW Values
+│           └── traffic-manager/                              # Traffic Manager Chart
+│               ├── confs/                                    # deployment.toml per instance
+│               ├── templates/                                # Instance 1 & 2 Deployments, PDB
+│               └── values.yaml                               # TM Values
+└── mi-deployment/                                            # WSO2 Micro Integrator 4.4.0 charts
 ```
 
 ---
 
-## Architecture
+## 5. Security & Production Hardening Applied
 
-Both products run as containerized workloads on Vanilla Kubernetes, exposed securely via the **NGINX Ingress Controller**. The APIM gateway proxies traffic to MI APIs registered through the APIM Publisher. Storage for CApps and configurations is handled via standard Kubernetes Persistent Volumes (e.g., NFS).
+1. **Non-Root Execution (UID/GID 10001)**:
+   - Configured `securityContext` (`runAsUser: 10001`, `runAsGroup: 10001`, `fsGroup: 10001`) aligning strictly with the WSO2 Carbon user ownership in `/home/wso2carbon`.
+   - Enabled `seccompProfile: { type: RuntimeDefault }` across all pods.
+2. **High Availability & Fault Tolerance**:
+   - `PodDisruptionBudget` configured with `minAvailable: 1` across all components (CP, GW, TM).
+   - `topologySpreadConstraints` configured for `kubernetes.io/hostname` to guarantee 1 pod per worker node.
+3. **Optimized Health Probes**:
+   - Control Plane & Gateway: Startup probe with TCP socket check and HTTP GET `/services/Version`.
+   - Traffic Manager: HTTP GET probe on port `9763` (`/services/Version`) with a failure threshold of 60 (10 minutes) allowing safe OSGi and webapp cold starts.
+4. **TLS Termination & Internal CA Integration**:
+   - Secret `my-tls-secret` loaded with the full certificate chain for `*.sybyl.int` issued by the Sybyl Internal Intermediate & Root CA.
+   - Client PCs with `sybyl_int_root_ca.crt` installed trust all portals and API gateways natively without browser warnings.
 
+---
+
+## 6. Deployment Guide
+
+### Step 1: Create Namespace and Secrets
+
+```bash
+# Create namespace
+kubectl create namespace wso2-apim
+
+# Create Wildcard TLS Secret for Envoy Gateway
+kubectl create secret tls my-tls-secret \
+  --cert=/home/ubuntu/intlabcrt/sybyl-int-wildcard-1yr.crt \
+  --key=/home/ubuntu/intlabcrt/sybyl-int-wildcard-1yr.key \
+  -n wso2-apim
+
+# Create Java Keystore Secret for APIM
+kubectl create secret generic apim-keystore-secret \
+  --from-file=wso2carbon.jks=apim-deployment/apim/keystores/wso2carbon.jks \
+  --from-file=client-truststore.jks=apim-deployment/apim/keystores/client-truststore.jks \
+  -n wso2-apim
+```
+
+### Step 2: Deploy Envoy Gateway & Gateway Resource
+
+```bash
+kubectl apply -f apim-deployment/helm-apim-4.5/docs/assets/sample-gateway.yaml
+```
+
+### Step 3: Deploy Pattern 3 Distributed Charts via Helm
+
+```bash
+# 1. Deploy Control Plane (CP)
+helm upgrade --install wso2am-cp \
+  ./apim-deployment/helm-apim-4.5/distributed/control-plane \
+  -n wso2-apim
+
+# 2. Deploy Universal Gateway (GW)
+helm upgrade --install wso2am-gw \
+  ./apim-deployment/helm-apim-4.5/distributed/gateway \
+  -n wso2-apim
+
+# 3. Deploy Traffic Manager (TM)
+helm upgrade --install wso2am-tm \
+  ./apim-deployment/helm-apim-4.5/distributed/traffic-manager \
+  -n wso2-apim
+```
+
+### Step 4: Verification
+
+```bash
+# Verify all 6 pods are Running (1/1 Ready)
+kubectl get pods -n wso2-apim -o wide
+
+# Verify HTTPRoutes attached to Envoy Gateway
+kubectl get httproutes -n wso2-apim
+```
+
+Expected output:
 ```text
-Internet
-   │
-   ▼
-NGINX Ingress Controller
-   │                    │
-   ▼                    ▼
-WSO2 APIM          WSO2 MI Pod
-(Publisher,        (CarbonApps
- DevPortal,         via NFS PVC)
- Gateway)               | 
-   │                    │
-   └────────────────────┘
-     APIM Gateway proxies
-     to MI backend service
-          │
-          ▼
-     PostgreSQL (wso2amdb
-     + wso2shareddb)
+NAME                                      READY   STATUS    RESTARTS   AGE
+wso2am-cp-deployment-1-bbc658b4b-gphgx    1/1     Running   0          50m
+wso2am-cp-deployment-2-5497946b44-jbwgq   1/1     Running   0          46m
+wso2am-gw-deployment-5c8667c48b-6tbhl     1/1     Running   0          29m
+wso2am-gw-deployment-5c8667c48b-pkkgr     1/1     Running   0          28m
+wso2am-tm-deployment-1-69fc589867-6x2dr   1/1     Running   0          17m
+wso2am-tm-deployment-2-6c7d778d77-v6zp4   1/1     Running   0          17m
 ```
 
 ---
 
-## Deployments
+## 7. Client Access & Testing
 
-### API Manager
+Add the worker node IP (`172.18.10.74` or `172.18.10.40`) to `/etc/hosts` or local DNS:
+```text
+172.18.10.74  publisher.sybyl.int devportal.sybyl.int admin.sybyl.int gw.sybyl.int websocket.sybyl.int websub.sybyl.int
+```
 
-APIM runs in an all-in-one topology (Publisher, DevPortal, Gateway, and Key Manager in a single pod). It requires two pre-populated PostgreSQL databases and a Kubernetes secret containing the JKS keystores for HTTPS and Ingress TLS termination.
-
-See **[`apim-deployment/apim/DB_SETUP.md`](apim-deployment/apim/DB_SETUP.md)** for database setup and **[`apim-deployment/helm-apim/README.md`](apim-deployment/helm-apim/README.md)** for the full deployment guide including:
-
-- Building and pushing the custom Docker image
-- Setting up PostgreSQL databases & permissions
-- Creating the JKS Keystore & Password secrets
-- Installing the Helm chart
-- Exposing a backend MI API through the Publisher
-
-### Micro Integrator
-
-MI runs as a stateless pod with CarbonApps (`.car` files) either baked into the Docker image (dev) or mounted from an NFS Host volume (production). It integrates with APIM as a backend gateway environment and can connect to the Integration Control Plane (ICP).
-
-See **[`mi-deployment/helm-mi/README.md`](mi-deployment/helm-mi/README.md)** for the full deployment guide including:
-
-- NFS Host directory provisioning and PV/PVC setup
-- Keystore and Truststore secret creation
-- Helm chart configuration (values.yaml) and deployment
-- CarbonApp hot-deployment strategies 
-
----
-
-## Prerequisites
-
-| Requirement | Notes |
-|---|---|
-| Vanilla Kubernetes | `kubectl` CLI configured and authenticated |
-| Helm 3.x | Run `helm version` to verify |
-| Docker / containerd | For building custom images |
-| PostgreSQL 18 | In-cluster pod or external database server |
-| NGINX Ingress | `ingress-nginx` controller must be installed and running |
-| NFS Server | Required for MI CarbonApp/Config volume mounts |
-| Container registry | Docker Hub, local registry, or private |
-
----
-
-## Quick Reference
-
-| Task | Command |
-|---|---|
-| Deploy APIM | `helm upgrade --install apim apim-deployment/helm-apim/all-in-one/ -f values.yaml -n <ns>` |
-| Deploy MI | `helm upgrade --install mi mi-deployment/helm-mi/mi/ -f values.yaml -n <ns>` |
-| Watch pods | `kubectl get pods -n <ns> -w` |
-| APIM Publisher | `https://<management-hostname>/publisher` |
-| APIM DevPortal | `https://<management-hostname>/devportal` |
-| MI health check | `curl -k https://<mi-hostname>/healthz` |
-
----
-
-## Related Documentation
-
-- [WSO2 API Manager Docs](https://apim.docs.wso2.com/en/latest/)
-- [WSO2 Micro Integrator Docs](https://mi.docs.wso2.com/en/latest/)
-- [Kubernetes NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx/)
-- [Kubernetes Persistent Volumes (NFS)](https://kubernetes.io/docs/concepts/storage/volumes/#nfs)
----
-Yes, you cant reach this cluster. It's in my private network.
+Open in any browser with the Sybyl Root CA installed:
+- **Publisher**: `https://publisher.sybyl.int/publisher`
+- **Developer Portal**: `https://devportal.sybyl.int/devportal`
+- **Admin**: `https://admin.sybyl.int/admin`
+- Default Credentials: `admin` / `admin` (update upon first login)

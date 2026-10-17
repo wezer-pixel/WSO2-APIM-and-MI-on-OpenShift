@@ -39,6 +39,14 @@ spec:
         node: {{ template "apim-helm-cp.fullname" . }}-1
         product: apim
     spec:
+      terminationGracePeriodSeconds: {{ .Values.wso2.deployment.terminationGracePeriodSeconds | default 90 }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            deployment: {{ template "apim-helm-cp.fullname" . }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -49,7 +57,7 @@ spec:
                   operator: In
                   values:
                   - {{ template "apim-helm-cp.fullname" . }}
-              topologyKey: "topology.kubernetes.io/zone"
+              topologyKey: "kubernetes.io/hostname"
             weight: 100
        {{- if .Values.wso2.apim.secureVaultEnabled }} 
       {{- if .Values.aws.enabled }}
@@ -61,6 +69,9 @@ spec:
       {{- end }}
       {{- end }}
       securityContext:
+        runAsUser: {{ .Values.kubernetes.securityContext.runAsUser | default 10001 }}
+        runAsGroup: {{ .Values.kubernetes.securityContext.runAsGroup | default 10001 }}
+        fsGroup: {{ .Values.kubernetes.securityContext.fsGroup | default 10001 }}
         seccompProfile:
           type: {{ .Values.kubernetes.securityContext.seccompProfile.type }}
           {{- if eq .Values.kubernetes.securityContext.seccompProfile.type "Localhost" }}
@@ -72,7 +83,13 @@ spec:
       {{- end }}
       containers:
       - name: wso2am-control-plane
+        {{- if .Values.wso2.deployment.image.digest }}
         image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}@{{ .Values.wso2.deployment.image.digest }}
+        {{- else if .Values.wso2.deployment.image.tag }}
+        image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}:{{ .Values.wso2.deployment.image.tag }}
+        {{- else }}
+        image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}
+        {{- end }}
         imagePullPolicy: {{ .Values.wso2.deployment.image.imagePullPolicy }}
         env:
         - name: PROFILE_NAME
@@ -194,7 +211,7 @@ spec:
                   echo "Pre stop hook triggered";
                   sleep {{ .Values.wso2.deployment.lifecycle.preStopHook.sleepSeconds }};
                   echo "Shutdown APIM Server";
-                  ${WSO2_SERVER_HOME}/bin/api-cp.sh stop
+                  ${WSO2_SERVER_HOME}/bin/api-manager.sh stop
         resources:
           requests:
             memory: {{ .Values.wso2.deployment.resources.requests.memory }}
@@ -278,6 +295,14 @@ spec:
           subPath: {{ .Values.wso2.apim.configurations.security.keystores.internal.name }}
         {{- end }}
         {{- end }}
+        {{- if and .Values.nfs .Values.nfs.enabled }}
+        - name: wso2am-cp-shared-volume
+          mountPath: /home/wso2carbon/wso2-config-volume/repository/tenants
+          subPath: tenants
+        - name: wso2am-cp-shared-volume
+          mountPath: /home/wso2carbon/wso2-config-volume/repository/deployment/server/userstores
+          subPath: userstores
+        {{- end }}
         {{ if .Values.wso2.deployment.persistence.solrIndexing.enabled }}
         - name: wso2am-control-plane-local-carbondb
           mountPath: /home/wso2carbon/solr/database
@@ -292,7 +317,7 @@ spec:
       - name: wso2am-control-plane-conf
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-1
-          defaultMode: 0407
+          defaultMode: 0755
       - name: wso2am-control-plane-entrypoint
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-entrypoint
@@ -300,7 +325,7 @@ spec:
       - name: wso2am-control-plane-log4j2
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-log4j2
-          defaultMode: 0407
+          defaultMode: 0755
       {{- if .Values.wso2.apim.mountStartupScript }}
       - name: wso2am-sh-conf
         configMap:
@@ -311,15 +336,15 @@ spec:
       - name: wso2am-conf-admin-settings
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-admin-settings
-          defaultMode: 0407
+          defaultMode: 0755
       - name: wso2am-conf-devportal-settings
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-devportal-settings
-          defaultMode: 0407
+          defaultMode: 0755
       - name: wso2am-conf-publisher-settings
         configMap:
           name: {{ template "apim-helm-cp.fullname" . }}-conf-publisher-settings
-          defaultMode: 0407
+          defaultMode: 0755
       {{- end }}
       {{- if .Values.wso2.apim.secureVaultEnabled }}
       - name: wso2am-control-plane-secret-conf
@@ -341,6 +366,11 @@ spec:
           volumeAttributes:
             secretProviderClass: {{ .Values.gcp.secretsManager.secretProviderClass }}
           {{- end }}
+      {{- end }}
+      {{- if and .Values.nfs .Values.nfs.enabled }}
+      - name: wso2am-cp-shared-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.nfs.existingClaim | default (printf "%s-shared-pvc" (include "apim-helm-cp.fullname" .)) }}
       {{- end }}
       {{- if .Values.kubernetes.extraVolumes }}{{ toYaml .Values.kubernetes.extraVolumes | nindent 6 }}{{- end }}
       {{- if .Values.wso2.apim.configurations.security.jksSecretName }}

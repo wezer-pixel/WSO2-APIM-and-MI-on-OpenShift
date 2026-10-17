@@ -1,7 +1,6 @@
-{{- if and .Values.wso2.apim.secureVaultEnabled .Values.azure.enabled }}
 # -------------------------------------------------------------------------------------
 #
-# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com). All Rights Reserved.
+# Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com). All Rights Reserved.
 #
 # This software is the property of WSO2 LLC. and its suppliers, if any.
 # Dissemination of any information or reproduction of any material contained 
@@ -10,13 +9,19 @@
 #
 # --------------------------------------------------------------------------------------
 
+{{- if and .Values.nfs .Values.nfs.enabled (not .Values.nfs.existingClaim) }}
 apiVersion: v1
-kind: Secret
-metadata:  
-  name: {{ template "apim-helm-km.fullname" . }}-secret-store-csi  
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "apim-helm-cp.fullname" . }}-shared-pvc
   namespace: {{ .Release.Namespace }}
-type: Opaque
-data:  
-  clientid: {{ .Values.azure.keyVault.activeDirectory.servicePrincipal.appId | b64enc }}  
-  clientsecret: {{ .Values.azure.keyVault.activeDirectory.servicePrincipal.clientSecretName | b64enc }}
+  labels:
+    {{- include "apim-helm-cp.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ .Values.nfs.storageClass | default "nfs-csi" | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.nfs.capacity | default "10Gi" }}
 {{- end }}

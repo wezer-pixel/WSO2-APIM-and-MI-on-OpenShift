@@ -263,7 +263,7 @@ spec:
       - name: wso2am-km-conf
         configMap:
           name: {{ template "apim-helm-km.fullname" . }}-conf
-          defaultMode: 0407
+          defaultMode: 0755
       - name: wso2am-km-entrypoint
         configMap:
           name: {{ template "apim-helm-km.fullname" . }}-conf-entrypoint
@@ -271,7 +271,7 @@ spec:
       - name: wso2am-km-log4j2
         configMap:
           name: {{ template "apim-helm-km.fullname" . }}-conf-log4j2
-          defaultMode: 0407
+          defaultMode: 0755
       {{- if .Values.wso2.apim.mountStartupScript }}
       - name: wso2am-sh-conf
         configMap:

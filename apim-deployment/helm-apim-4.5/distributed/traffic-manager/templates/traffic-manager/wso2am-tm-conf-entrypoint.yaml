@@ -70,4 +70,4 @@ data:
 
     # start WSO2 Carbon server
     echo "Start WSO2 Carbon server" >&2
-    sh ${WSO2_SERVER_HOME}/bin/traffic-manager.sh "$@" {{ .Values.wso2.apim.startupArgs }}
+    sh ${WSO2_SERVER_HOME}/bin/api-manager.sh "$@" {{ .Values.wso2.apim.startupArgs }}

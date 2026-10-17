@@ -14,7 +14,7 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ template "apim-helm-cp.fullname" . }}-pdb
 spec:
-  minAvailable: {{ .Values.wso2.deployment.minAvailable | quote }}
+  minAvailable: {{ .Values.wso2.deployment.minAvailable }}
   selector:
     matchLabels:
-      deployment: {{ template "apim-helm-cp.fullname" . }}-deployment
+      deployment: {{ template "apim-helm-cp.fullname" . }}

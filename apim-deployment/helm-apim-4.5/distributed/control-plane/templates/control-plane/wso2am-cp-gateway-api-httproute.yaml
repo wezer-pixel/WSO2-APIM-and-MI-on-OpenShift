@@ -23,9 +23,16 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.kubernetes.gatewayAPI.gatewayName }}
-    sectionName: control-plane-https
+    {{- if .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    namespace: {{ .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    {{- end }}
+    sectionName: {{ .Values.kubernetes.gatewayAPI.controlPlane.sectionName | default "control-plane-https" }}
   hostnames:
+  {{- if .Values.kubernetes.gatewayAPI.controlPlane.hostnames }}
+  {{- toYaml .Values.kubernetes.gatewayAPI.controlPlane.hostnames | nindent 2 }}
+  {{- else }}
   - {{ .Values.kubernetes.gatewayAPI.controlPlane.hostname }}
+  {{- end }}
   rules:
   - matches:
     - path:

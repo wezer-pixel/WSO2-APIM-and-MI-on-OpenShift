@@ -23,7 +23,14 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.kubernetes.gatewayAPI.gatewayName }}
+    {{- if .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    namespace: {{ .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    {{- end }}
+    {{- if .Values.kubernetes.gatewayAPI.gateway.sectionName }}
+    sectionName: {{ .Values.kubernetes.gatewayAPI.gateway.sectionName }}
+    {{- else }}
     sectionName: gateway-https
+    {{- end }}
   hostnames:
   - {{ .Values.kubernetes.gatewayAPI.gateway.hostname }}
   rules:

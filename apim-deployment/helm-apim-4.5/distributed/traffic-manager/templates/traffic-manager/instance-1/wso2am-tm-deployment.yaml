@@ -42,6 +42,14 @@ spec:
         node: {{ template "apim-helm-tm.fullname" . }}-1
         product: apim
     spec:
+      terminationGracePeriodSeconds: 90
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            deployment: {{ template "apim-helm-tm.fullname" . }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -52,7 +60,7 @@ spec:
                   operator: In
                   values:
                   - {{ template "apim-helm-tm.fullname" . }}
-              topologyKey: "topology.kubernetes.io/zone"
+              topologyKey: "kubernetes.io/hostname"
             weight: 100
       {{- if .Values.wso2.apim.secureVaultEnabled }} 
       {{- if .Values.aws.enabled }}
@@ -64,6 +72,9 @@ spec:
       {{- end }}
       {{- end }}
       securityContext:
+        runAsUser: {{ .Values.kubernetes.securityContext.runAsUser | default 10001 }}
+        runAsGroup: {{ .Values.kubernetes.securityContext.runAsGroup | default 10001 }}
+        fsGroup: {{ .Values.kubernetes.securityContext.fsGroup | default 10001 }}
         seccompProfile:
           type: {{ .Values.kubernetes.securityContext.seccompProfile.type }}
           {{- if eq .Values.kubernetes.securityContext.seccompProfile.type "Localhost" }}
@@ -75,11 +86,15 @@ spec:
       {{- end }}
       containers:
       - name: wso2am-traffic-manager
+        {{- if .Values.wso2.deployment.image.digest }}
         image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}@{{ .Values.wso2.deployment.image.digest }}
+        {{- else }}
+        image: {{ .Values.wso2.deployment.image.registry }}/{{ .Values.wso2.deployment.image.repository }}:{{ .Values.wso2.deployment.image.tag }}
+        {{- end }}
         imagePullPolicy: {{ .Values.wso2.deployment.image.imagePullPolicy }}
         env:
         - name: PROFILE_NAME
-          value: traffic-manager
+          value: default
         - name: NODE_IP
           valueFrom:
             fieldRef:
@@ -165,11 +180,9 @@ spec:
         {{- end }}
         {{- end }}
         startupProbe:
-          exec:
-            command:
-              - /bin/sh
-              - -c
-              - timeout 1 bash -c "</dev/tcp/localhost/9443"
+          httpGet:
+            path: /services/Version
+            port: 9763
           initialDelaySeconds: {{ .Values.wso2.deployment.startupProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.wso2.deployment.startupProbe.periodSeconds }}
           failureThreshold: {{ .Values.wso2.deployment.startupProbe.failureThreshold }}
@@ -197,7 +210,7 @@ spec:
                   echo "Pre stop hook triggered";
                   sleep {{ .Values.wso2.deployment.lifecycle.preStopHook.sleepSeconds }};
                   echo "Shutdown APIM Server";
-                  ${WSO2_SERVER_HOME}/bin/traffic-manager.sh stop
+                  ${WSO2_SERVER_HOME}/bin/api-manager.sh stop
         resources:
           requests:
             memory: {{ .Values.wso2.deployment.resources.requests.memory }}
@@ -206,7 +219,8 @@ spec:
             memory: {{ .Values.wso2.deployment.resources.limits.memory }}
             cpu: {{ .Values.wso2.deployment.resources.limits.cpu }}
         securityContext:
-          runAsUser: {{ .Values.kubernetes.securityContext.runAsUser }}
+          runAsUser: {{ .Values.kubernetes.securityContext.runAsUser | default 10001 }}
+          runAsGroup: {{ .Values.kubernetes.securityContext.runAsGroup | default 10001 }}
           allowPrivilegeEscalation: false
           runAsNonRoot: true
           {{- if .Values.kubernetes.securityContext.seLinux.enabled }}
@@ -276,7 +290,7 @@ spec:
       - name: wso2am-traffic-manager-conf
         configMap:
           name: {{ template "apim-helm-tm.fullname" . }}-conf-1
-          defaultMode: 0407
+          defaultMode: 0755
       - name: wso2am-traffic-manager-entrypoint
         configMap:
           name: {{ template "apim-helm-tm.fullname" . }}-conf-entrypoint
@@ -284,7 +298,7 @@ spec:
       - name: wso2am-traffic-manager-log4j2
         configMap:
           name: {{ template "apim-helm-tm.fullname" . }}-conf-log4j2
-          defaultMode: 0407
+          defaultMode: 0755
       {{- if .Values.wso2.apim.mountStartupScript }}
       - name: wso2am-sh-conf
         configMap:

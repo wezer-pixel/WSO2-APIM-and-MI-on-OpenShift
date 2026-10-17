@@ -9,6 +9,16 @@
 #
 # --------------------------------------------------------------------------------------
 
+# -- Override the fullname of the chart resources to ensure predictable service names
+fullnameOverride: "wso2am-cp"
+
+# -- NFS shared storage for multitenancy (tenants, secondary userstores)
+nfs:
+  enabled: true
+  storageClass: "nfs-csi"
+  capacity: "10Gi"
+  existingClaim: ""
+
 aws:
   # -- If AWS is used as the cloud provider
   enabled: false
@@ -177,7 +187,7 @@ kubernetes:
       # -- Enable ingress for Control Plane
       enabled: false
       # -- Ingress hostname
-      hostname: "am.wso2.com"
+      hostname: "am.sybyl.int"
       # -- Ingress annotations
       annotations:
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -202,7 +212,7 @@ kubernetes:
       # -- Enable route for Control Plane
       enabled: false
       # -- Route hostname
-      hostname: "am.wso2.com"
+      hostname: "am.sybyl.int"
       # -- Route annotations
       annotations:
         # key: value
@@ -210,20 +220,29 @@ kubernetes:
   # -- Kubernetes Gateway API configurations (alternative to Ingress)
   # Requires Gateway API CRDs to be installed in the cluster
   # The Gateway resource must be created externally before deploying this chart
-  # See docs/assets/gateway.sample-gateway.yaml for an example Gateway manifest
+  # See docs/assets/sample-gateway.yaml for an example Gateway manifest
   gatewayAPI:
     # -- Enable Gateway API resources (HTTPRoutes and policies)
     enabled: true
     # -- Name of the externally-created Gateway resource that HTTPRoutes will reference (e.g., istio, nginx, contour, envoy-gateway, gke-l7-global-external-managed)
     # This Gateway must exist in the same namespace before installing the chart
-    gatewayName: ""
+    gatewayName: "wso2-apim-gateway"
+    # -- Optional namespace of the Gateway resource if deployed in a separate namespace (e.g., envoy-gateway-system)
+    gatewayNamespace: ""
     # -- Create CA certificate ConfigMap for BackendTLSPolicy
     defaultConfigMapCreation: false
     controlPlane:
       # -- Enable HTTPRoute for Control Plane
       enabled: true
-      # -- Hostname for Control Plane
-      hostname: "am.wso2.com"
+      # -- Primary hostname for Control Plane
+      hostname: "am.sybyl.int"
+      # -- All hostnames exposed by Control Plane (Publisher, DevPortal, Admin consoles)
+      hostnames:
+        - "publisher.sybyl.int"
+        - "devportal.sybyl.int"
+        - "admin.sybyl.int"
+        - "am.sybyl.int"
+        - "cp.sybyl.int"
       # -- HTTPRoute annotations
       annotations: {}
       # -- HTTPRoute filters (optional)
@@ -247,8 +266,10 @@ kubernetes:
         # -- Cookie TTL. Use "0s" for a session cookie (expires when browser closes)
         ttl: "0s"
   securityContext:
-    # -- User ID of the container
+    # -- User ID of the container (WSO2 4.x image runs as 10001 wso2carbon)
     runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
     # -- SELinux context for the container
     seLinux:
       enabled: false
@@ -263,7 +284,7 @@ kubernetes:
   # -- Set UNIX permissions over the executable scripts
   configMaps:
     scripts:
-      defaultMode: "0407"
+      defaultMode: "0755"
 
   # -- Mount extra volumes to the deployment pods, e.g to mount secrets
   # extraVolumeMounts:
@@ -302,7 +323,7 @@ wso2:
     configurations:
       encryption:
         # -- Symmetric encryption key shared by all nodes. This must be set explicitly and must be the same across all nodes before first startup.
-        key: ""
+        key: "9e8367066d4cd67d023c5bde9efdac81ec597717afb1b94c41dc68be8150a5a4"
         # -- Symmetric cipher transformation. AES/GCM/NoPadding is used as the symmetric cipher transformation.
         cipherTransformation: "AES/GCM/NoPadding"
         # -- Internal crypto provider implementation used for symmetric encryption.
@@ -323,27 +344,27 @@ wso2:
         properties:
           key: value
       # -- Super admin username
-      adminUsername: ""
+      adminUsername: "admin"
       # -- Super admin password
-      adminPassword: ""
+      adminPassword: "admin"
       # -- Read password from secret
       adminPasswordExistingSecret:
         secretName: "" # e.g apim-admin-secret
         secretKey: ""  # e.g adminpassword
       databases:
         # -- Database type. eg: mysql, oracle, mssql, postgres
-        type: ""
+        type: "postgres"
         jdbc:
           # -- JDBC driver class name
-          driver: ""
+          driver: "org.postgresql.Driver"
         # -- APIM AM_DB configurations.
         apim_db:
           # -- APIM AM_DB URL
-          url: ""
+          url: "jdbc:postgresql://172.18.10.143:5432/apim_dist_db"
           # -- APIM AM_DB username
-          username: ""
+          username: "apim"
           # -- APIM AM_DB password
-          password: ""
+          password: "apim123!"
           # -- Read password from secret
           passwordExistingSecret:
             secretName: "" # e.g apim-db-secret
@@ -360,11 +381,11 @@ wso2:
         # -- APIM SharedDB configurations.
         shared_db:
           # -- APIM SharedDB URL
-          url: ""
+          url: "jdbc:postgresql://172.18.10.143:5432/shared_dist_db"
           # -- APIM SharedDB username
-          username: ""
+          username: "apim"
           # -- APIM SharedDB password
-          password: ""
+          password: "apim123!"
           # -- Read password from secret
           passwordExistingSecret:
             secretName: "" # e.g apim-shared-db-secret
@@ -424,9 +445,9 @@ wso2:
             # -- Primary keystore alias
             alias: "wso2carbon"
             # -- Primary keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Primary keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           tls:
             # -- TLS keystore enabled
             enabled: true
@@ -435,9 +456,9 @@ wso2:
             # -- TLS keystore alias
             alias: "wso2carbon"
             # -- TLS keystore password
-            password: ""
+            password: "wso2carbon"
             # -- TLS keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
           internal:
             # -- Internal keystore enabled
             enabled: false
@@ -446,14 +467,14 @@ wso2:
             # -- Internal keystore alias
             alias: "wso2carbon"
             # -- Internal keystore password
-            password: ""
+            password: "wso2carbon"
             # -- Internal keystore key password
-            keyPassword: ""
+            keyPassword: "wso2carbon"
         truststore:
           # -- Truststore name
           name: "client-truststore.jks"
           # -- Truststore password
-          password: ""
+          password: "wso2carbon"
       
       gateway:
         # -- APIM Gateway environments
@@ -466,11 +487,11 @@ wso2:
           displayInApiConsole: true
           description: "This is a hybrid gateway that handles both production and sandbox token traffic."
           showAsTokenEndpointUrl: true
-          serviceName: "wso2am-gateway-service"
+          serviceName: "wso2am-gw-service"
           servicePort: 9443
-          wsHostname: "websocket.wso2.com"
-          httpHostname: "gw.wso2.com"
-          websubHostname: "websub.wso2.com"
+          wsHostname: "websocket.sybyl.int"
+          httpHostname: "gw.sybyl.int"
+          websubHostname: "websub.sybyl.int"
 
       gatewayNotification:
         cleanUp:
@@ -622,33 +643,34 @@ wso2:
         username: ""
         password: ""
       # -- Container registry hostname
-      registry: ""
-      # -- Azure ACR repository name consisting the image
-      repository: ""
+      registry: "docker.io"
+      # -- Repository name consisting the image
+      repository: "wezer/apim-all-in-one-4.7.0"
+      # -- Docker image tag
+      tag: "4.7.0"
       # -- Docker image digest
-      digest: ""
+      digest: "sha256:7d998dea6a68657859acd78d42eef60a36c0a37639e85cdb264cdbbe930cde0b"
       # -- Refer to the Kubernetes documentation on updating images (https://kubernetes.io/docs/concepts/containers/images/#updating-images)
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
 
     resources:
-      # These are the resource recommendations for running WSO2 API Management product profiles with profile optimization
-      # Resource configurations defined here are applicable for all API Manager product profiles of this deployment
+      # Resource recommendations for running WSO2 API Management Control Plane (Pattern 3: 1.5 vCPU / 3 Gi request, 3 vCPU / 5 Gi limit)
       requests:
-        # -- Memory request for API Manager
-        memory: "2Gi"
-        # -- CPU request for API Manager
-        cpu: "2000m"
-      limits:
-        # -- Memory limit for API Manager
+        # -- Memory request for API Manager Control Plane
         memory: "3Gi"
-        # -- CPU limit for API Manager
+        # -- CPU request for API Manager Control Plane
+        cpu: "1500m"
+      limits:
+        # -- Memory limit for API Manager Control Plane
+        memory: "5Gi"
+        # -- CPU limit for API Manager Control Plane
         cpu: "3000m"
       jvm:
         memory:
-          # -- JVM heap memory Xms
+          # -- JVM heap memory Xms (roughly 50-60% of container memory limit)
           xms: "2048m"
           # -- JVM heap memory Xmx
-          xmx: "2048m"
+          xmx: "3072m"
 
     # Kubernetes Probes
     # Indicates whether the container starting
@@ -658,7 +680,7 @@ wso2:
       # -- How often (in seconds) to perform the probe
       periodSeconds: 10
       # -- Minimum consecutive successes for the probe to be considered successful after having failed
-      failureThreshold: 3
+      failureThreshold: 30
     # Indicates whether the container is running
     livenessProbe:
       # -- Number of seconds after the container has started before liveness probes are initiated
@@ -674,17 +696,20 @@ wso2:
       # -- How often (in seconds) to perform the probe
       periodSeconds: 10
       # -- Minimum consecutive successes for the probe to be considered successful after having failed
-      failureThreshold: 3
+      failureThreshold: 5
 
     lifecycle:
       preStopHook:
         # -- Number of seconds to sleep before sending SIGTERM to the pod
-        sleepSeconds: 10
+        sleepSeconds: 15
 
-    # Number of deployment replicas
+    # -- Termination grace period in seconds to ensure requests drain cleanly
+    terminationGracePeriodSeconds: 90
+
+    # Number of deployment replicas per instance (instance-1: 1, instance-2: 1 = 2 total)
     replicas: 1
     # -- Minimum available pod counts for PDB
-    minAvailable: "50%"
+    minAvailable: 1
 
     # -- Node selector to deploy pod in selected node. Add label to the node and specify the label here.
     nodeSelector:

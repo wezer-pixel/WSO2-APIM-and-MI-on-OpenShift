@@ -23,7 +23,14 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.kubernetes.gatewayAPI.gatewayName }}
+    {{- if .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    namespace: {{ .Values.kubernetes.gatewayAPI.gatewayNamespace }}
+    {{- end }}
+    {{- if .Values.kubernetes.gatewayAPI.websocket.sectionName }}
+    sectionName: {{ .Values.kubernetes.gatewayAPI.websocket.sectionName }}
+    {{- else }}
     sectionName: websocket-https
+    {{- end }}
   hostnames:
   - {{ .Values.kubernetes.gatewayAPI.websocket.hostname }}
   rules:
