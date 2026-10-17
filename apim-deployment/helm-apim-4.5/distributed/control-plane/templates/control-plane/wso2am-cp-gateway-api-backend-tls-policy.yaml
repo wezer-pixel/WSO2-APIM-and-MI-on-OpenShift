@@ -11,7 +11,7 @@
 
 
 {{- if and .Values.kubernetes.gatewayAPI.enabled .Values.kubernetes.gatewayAPI.backendTLSPolicy.enabled }}
-apiVersion: gateway.networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1alpha3
 kind: BackendTLSPolicy
 metadata:
   name: {{ template "apim-helm-cp.fullname" . }}-backend-tls-policy

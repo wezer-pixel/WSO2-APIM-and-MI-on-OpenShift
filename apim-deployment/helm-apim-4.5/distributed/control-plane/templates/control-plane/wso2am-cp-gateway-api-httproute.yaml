@@ -40,7 +40,7 @@ spec:
         value: /
     backendRefs:
     - name: {{ template "apim-helm-cp.fullname" . }}-service
-      port: {{ add 9763 (.Values.wso2.apim.portOffset | default 0) }}
+      port: {{ if .Values.kubernetes.gatewayAPI.backendTLSPolicy.enabled }}{{ add 9443 (.Values.wso2.apim.portOffset | default 0) }}{{ else }}{{ add 9763 (.Values.wso2.apim.portOffset | default 0) }}{{ end }}
     {{- if .Values.kubernetes.gatewayAPI.controlPlane.filters }}
     filters:
 {{ toYaml .Values.kubernetes.gatewayAPI.controlPlane.filters | indent 4 }}

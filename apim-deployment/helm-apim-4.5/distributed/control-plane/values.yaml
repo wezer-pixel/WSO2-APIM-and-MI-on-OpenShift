@@ -250,11 +250,11 @@ kubernetes:
     # -- Backend TLS Policy for HTTPS backend connections
     backendTLSPolicy:
       # -- Enable BackendTLSPolicy
-      enabled: false
+      enabled: true
       # -- CA certificate ConfigMap name for backend TLS verification
-      caCertificateConfigMap: ""
+      caCertificateConfigMap: "wso2am-cp-backend-ca"
       # -- Backend hostname for TLS verification
-      hostname: ""
+      hostname: "localhost"
     # -- Backend Traffic Policy for cookie-based session affinity
     # Requires Envoy Gateway controller support for BackendTrafficPolicy
     backendTrafficPolicy:
