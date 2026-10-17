@@ -1,0 +1,18 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: sybyl-metallb-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.18.10.245-172.18.10.254
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: sybyl-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - sybyl-metallb-pool
