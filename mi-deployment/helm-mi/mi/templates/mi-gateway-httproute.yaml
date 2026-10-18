@@ -1,0 +1,39 @@
+{{- if .Values.wso2.deployment.hostname }}
+# -------------------------------------------------------------------------------------
+# Gateway API HTTPRoute for WSO2 Micro Integrator
+# Routes mi.sybyl.int → MI HTTPS pass-through port (8253 + offset - 10)
+# Routes mi.sybyl.int/management → MI management port (9164 + offset - 10)
+# TLS terminated at Envoy Gateway (*.sybyl.int listener, secret: wso2-mi-wildcard-tls)
+# -------------------------------------------------------------------------------------
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-mi-httproute
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "micro-integrator.labels" . | indent 4 }}
+spec:
+  parentRefs:
+    - name: wso2-mi-gateway
+      namespace: {{ .Release.Namespace }}
+      sectionName: mi-https
+  hostnames:
+    - {{ .Values.wso2.deployment.hostname | quote }}
+  rules:
+    # Management API
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /management
+      backendRefs:
+        - name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+          port: {{ add 9164 .Values.wso2.config.portOffset -10 }}
+    # All other traffic → pass-through HTTPS port
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
+          port: {{ add 8253 .Values.wso2.config.portOffset -10 }}
+{{- end }}
