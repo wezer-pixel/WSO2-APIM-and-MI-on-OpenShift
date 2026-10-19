@@ -27,13 +27,13 @@ spec:
             value: /management
       backendRefs:
         - name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
-          port: {{ add 9164 .Values.wso2.config.portOffset -10 }}
-    # All other traffic → pass-through HTTPS port
+          port: {{ add 9201 .Values.wso2.config.portOffset -10 }}
+    # All other traffic → pass-through HTTP port (TLS terminated by Envoy at edge)
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
         - name: {{ template "resource.prefix" . }}-{{ .Release.Name }}
-          port: {{ add 8253 .Values.wso2.config.portOffset -10 }}
+          port: {{ add 8290 .Values.wso2.config.portOffset -10 }}
 {{- end }}

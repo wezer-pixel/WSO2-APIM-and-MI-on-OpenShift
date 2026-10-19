@@ -125,14 +125,14 @@ wso2:
 
     probes:
       startup:
-        initialDelaySeconds: 5
-        periodSeconds: 3
+        initialDelaySeconds: 10
+        periodSeconds: 5
         failureThreshold: 40
       liveness:
         periodSeconds: 10
       readiness:
-        initialDelaySeconds: 6
-        periodSeconds: 3
+        initialDelaySeconds: 10
+        periodSeconds: 5
 
     # -- 2 replicas spread across wkr1 and wkr2 for HA
     replicas: 2
@@ -155,11 +155,11 @@ wso2:
 
     resources:
       requests:
-        memory: "512Mi"
+        memory: "1Gi"
         cpu: "500m"
       limits:
-        memory: "1Gi"
-        cpu: "1000m"
+        memory: "2Gi"
+        cpu: "2000m"
       jvm:
         memory:
           xms: "512m"

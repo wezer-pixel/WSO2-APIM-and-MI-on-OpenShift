@@ -7,7 +7,10 @@
 hostname = {{ .Values.wso2.deployment.hostname | quote }}
 offset   = {{ .Values.wso2.config.portOffset }}
 
-# Envoy Gateway terminates TLS at 443 → MI receives traffic on its HTTPS port
+# Envoy Gateway terminates TLS at 443 → MI receives traffic from Envoy
+[transport.http.properties]
+proxyPort = 443
+
 [transport.https.properties]
 proxyPort = 443
 
@@ -26,21 +29,21 @@ create_admin_account = {{ .Values.wso2.config.admin.createAdminAccount }}
 # Keystores & Trust stores
 # -----------------------------------------------------------------------
 [keystore.primary]
-file_name = {{ .Values.wso2.config.keyStore.primary.fileName | quote }}
+file_name = "repository/resources/security/{{ .Values.wso2.config.keyStore.primary.fileName }}"
 type      = "JKS"
 password  = {{ .Values.wso2.config.keyStore.primary.password | quote }}
 alias     = {{ .Values.wso2.config.keyStore.primary.alias | quote }}
 key_password = {{ .Values.wso2.config.keyStore.primary.keyPassword | quote }}
 
 [keystore.internal]
-file_name = {{ .Values.wso2.config.keyStore.internal.fileName | quote }}
+file_name = "repository/resources/security/{{ .Values.wso2.config.keyStore.internal.fileName }}"
 type      = "JKS"
 password  = {{ .Values.wso2.config.keyStore.internal.password | quote }}
 alias     = {{ .Values.wso2.config.keyStore.internal.alias | quote }}
 key_password = {{ .Values.wso2.config.keyStore.internal.keyPassword | quote }}
 
 [truststore]
-file_name = {{ .Values.wso2.config.trustStore.primary.fileName | quote }}
+file_name = "repository/resources/security/{{ .Values.wso2.config.trustStore.primary.fileName }}"
 type      = "JKS"
 password  = {{ .Values.wso2.config.trustStore.primary.password | quote }}
 

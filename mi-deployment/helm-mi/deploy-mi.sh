@@ -57,24 +57,15 @@ kubectl create secret tls wso2-mi-wildcard-tls \
   -n "${NAMESPACE}"
 
 # ---- 3. Keystores Secret ----------------------------------------------------
-info "Creating/updating keystore secret 'mi-keystores'..."
+info "Ensuring keystore secret 'mi-keystores' exists..."
 SECURITY_DIR="${CHART_DIR}/security"
-kubectl create secret generic mi-keystores \
-  --from-file=wso2carbon.jks="${SECURITY_DIR}/wso2carbon.jks" \
-  --from-file=client-truststore.jks="${SECURITY_DIR}/client-truststore.jks" \
-  -n "${NAMESPACE}" \
-  --dry-run=client -o yaml > /tmp/mi-keystores.yaml 2>/dev/null || true
-
-if [[ -s /tmp/mi-keystores.yaml ]]; then
-  kubectl apply -f /tmp/mi-keystores.yaml
-  rm -f /tmp/mi-keystores.yaml
-else
-  # Fallback: delete and recreate (JKS files are too large for dry-run annotation)
-  kubectl delete secret mi-keystores -n "${NAMESPACE}" --ignore-not-found
+if ! kubectl get secret mi-keystores -n "${NAMESPACE}" &>/dev/null; then
   kubectl create secret generic mi-keystores \
     --from-file=wso2carbon.jks="${SECURITY_DIR}/wso2carbon.jks" \
     --from-file=client-truststore.jks="${SECURITY_DIR}/client-truststore.jks" \
     -n "${NAMESPACE}"
+else
+  info "Secret 'mi-keystores' already exists."
 fi
 
 # ---- 4. Gateway + NFS PVC (bootstrap) --------------------------------------
