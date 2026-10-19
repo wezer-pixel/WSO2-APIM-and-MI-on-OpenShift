@@ -1,0 +1,72 @@
+# =====================================================================================
+# WSO2 Micro Integrator — Gateway API Bootstrap Resources
+# Apply ONCE before `helm install`:
+#   kubectl apply -f mi-gateway-resources.yaml
+#
+# What this creates:
+#   1. Gateway (wso2-mi-gateway) in namespace wso2-mi
+#      - Uses the same Envoy GatewayClass (envoy-gateway) as APIM
+#      - Single HTTPS listener on *.sybyl.int:443 → TLS terminated with wildcard cert
+#   2. NFS PVC (mi-carbonapps-pvc) in namespace wso2-mi
+#      - ReadWriteMany for shared carbonapps across MI replicas
+#      - StorageClass: nfs-csi (Nimble-backed NFS provisioner)
+# =====================================================================================
+
+---
+# Gateway — wso2-mi-gateway
+# Shares the same Envoy GatewayClass as APIM (envoy-gateway → envoy-ha-config).
+# The wildcard listener *.sybyl.int matches mi.sybyl.int from the HTTPRoute.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: wso2-mi-gateway
+  namespace: wso2-mi
+spec:
+  gatewayClassName: envoy-gateway
+  listeners:
+    - name: mi-https
+      hostname: "mi.sybyl.int"
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wso2-mi-wildcard-tls
+            namespace: wso2-mi
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+---
+# NFS PVC for carbonapps — pre-created so the Helm chart references it directly.
+# ReferenceGrant is not needed here because PVC and deployment share the same namespace.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mi-carbonapps-pvc
+  namespace: wso2-mi
+spec:
+  accessModes:
+    - ReadWriteMany          # NFS: multiple MI pods can read/write concurrently
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: nfs-csi
+
+---
+# NFS PVC for shared libs — JDBC connectors, custom mediators, etc.
+# Mount path inside container: /home/wso2carbon/wso2mi-4.4.0/lib
+# Drop .jar files here without rebuilding the image; replicas hot-reload on restart.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mi-libs-pvc
+  namespace: wso2-mi
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-csi

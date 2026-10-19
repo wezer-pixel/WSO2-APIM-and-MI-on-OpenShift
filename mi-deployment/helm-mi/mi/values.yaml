@@ -107,11 +107,18 @@ wso2:
     mountCapps: true
     cappsPvcName: "mi-carbonapps-pvc"
 
+    # -- Mount shared libs (JDBC connectors, custom mediators) from NFS PVC.
+    # Drop .jar files onto the NFS share; all MI replicas pick them up automatically.
+    mountLibs: true
+    libsPvcName: "mi-libs-pvc"
+
     imagePullSecrets: ""
 
     image:
-      # -- Official WSO2 MI image (matches Dockerfile base in agency-intg/)
-      repository: "docker.wso2.com/wso2mi"
+      # -- Public DockerHub image — no subscription required.
+      # Build and push a custom image only if you need extra OS packages.
+      # JDBC connectors and integration libs go on the NFS libs volume instead.
+      repository: "wso2/wso2mi"
       digest: ""
       tag: "4.4.0"
       pullPolicy: "IfNotPresent"

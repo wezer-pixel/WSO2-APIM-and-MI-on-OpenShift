@@ -78,7 +78,14 @@ spec:
                       operator: In
                       values:
                         - {{ template "resource.prefix" . }}-{{ .Release.Name }}
-                topologyKey: topology.kubernetes.io/zone
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              deployment: {{ template "resource.prefix" . }}-{{ .Release.Name }}
       containers:
         - name: wso2mi
           image: "{{- if .Values.containerRegistry -}}{{ .Values.containerRegistry }}/{{ end }}{{ .Values.wso2.deployment.image.repository }}{{- if .Values.wso2.deployment.image.digest -}}@{{ .Values.wso2.deployment.image.digest }}{{- else -}}:{{ .Values.wso2.deployment.image.tag }}{{- end }}"
@@ -162,6 +169,10 @@ spec:
             - name: capps
               mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/deployment/server/carbonapps
             {{- end }}
+            {{- if .Values.wso2.deployment.mountLibs }}
+            - name: libs
+              mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/lib
+            {{- end }}
             {{- if .Values.wso2.deployment.JKSSecretName }}
               # Primary keystore
             - name: keystores
@@ -233,6 +244,11 @@ spec:
         - name: capps
           persistentVolumeClaim:
             claimName: {{ .Values.wso2.deployment.cappsPvcName | default (printf "%s-%s-carbonapps" (include "resource.prefix" .) .Release.Name) }}
+        {{- end }}
+        {{- if .Values.wso2.deployment.mountLibs }}
+        - name: libs
+          persistentVolumeClaim:
+            claimName: {{ .Values.wso2.deployment.libsPvcName | default (printf "%s-%s-libs" (include "resource.prefix" .) .Release.Name) }}
         {{- end }}
         - name: wso2mi-entrypoint
           configMap:

@@ -1,32 +1,20 @@
-{{- if and (.Values.wso2.deployment.mountCapps) (empty .Values.wso2.deployment.cappsPvcName) }}
-# ------------------------------------------------------------------------------------
-# Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
-#
-# WSO2 LLC. licenses this file to you under the Apache License,
-# Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied. See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#------------------------------------------------------------------------------------
-
+{{- if .Values.wso2.deployment.mountCapps }}
+{{- if not .Values.wso2.deployment.cappsPvcName }}
+# Auto-generated PVC for carbonapps — only rendered when cappsPvcName is NOT pre-set.
+# If you pre-create the PVC externally (recommended for NFS), set cappsPvcName in values.yaml.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ template "resource.prefix" . }}-{{ .Release.Name }}-carbonapps
-  namespace : {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "micro-integrator.labels" . | indent 4 }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany      # NFS supports RWX — allows multiple MI pods to share the volume
   resources:
     requests:
       storage: {{ template "capp-storage-capacity" . }}
   storageClassName: {{ template "capp-storage-class-name" . }}
-{{- end}}
+{{- end }}
+{{- end }}

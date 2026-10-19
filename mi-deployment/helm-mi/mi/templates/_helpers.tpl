@@ -5,7 +5,7 @@ Common prefix prepended to Kubernetes resources of this chart
 {{- if .Values.cloudName -}}
 {{ .Values.cloudName }}
 {{- else -}}
-{{- "cloud" }}
+{{- "wso2mi" }}
 {{- end -}}
 {{- end -}}
 
@@ -77,7 +77,7 @@ Create chart name and version as used by the chart label.
 {{- else if eq "gcp" .Values.provider }}
 {{- .Values.gcp.storage.storageClass -}}
 {{- else }}
-{{- "local-path" -}}
+{{- "nfs-csi" -}}
 {{- end }}
 {{- end -}}
 
