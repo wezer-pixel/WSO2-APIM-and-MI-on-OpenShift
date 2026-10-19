@@ -56,6 +56,10 @@ spec:
       {{- if and (eq "aws" .Values.provider) (.Values.aws.serviceAccountName) }}
       serviceAccountName: {{ .Values.aws.serviceAccountName }}
       {{- end }}
+      {{- if .Values.wso2.deployment.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.wso2.deployment.hostAliases | indent 8 }}
+      {{- end }}
       securityContext:
         {{- if .Values.wso2.deployment.securityContext.enableRunAsUser }}
         runAsUser: {{ .Values.wso2.deployment.securityContext.runAsUser }}
@@ -195,7 +199,8 @@ spec:
               mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.keystore.fileName }}
               subPath: {{ .Values.wso2.config.keyStore.transport.sender.fileName }}
             {{- end }}
-              # Primary Truststore
+            {{- end }}
+              # Primary Truststore — always mount from secret so CA imports are honoured
             - name: keystores
               mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.trustStore.primary.fileName }}
               subPath: {{ .Values.wso2.config.trustStore.primary.fileName }}
@@ -210,7 +215,6 @@ spec:
             - name: keystores
               mountPath: /home/wso2carbon/wso2mi-{{ .Values.wso2.deployment.BuildVersion }}/repository/resources/security/{{ .Values.wso2.config.transport.http.nonBlocking.sender.truststore.fileName }}
               subPath: {{ .Values.wso2.config.trustStore.transport.sender.fileName }}
-            {{- end }}
             {{- end }}
             {{- if .Values.wso2.config.secureVault.enabled }}
             - name: wso2mi-secrets-volume

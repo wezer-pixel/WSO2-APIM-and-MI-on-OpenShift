@@ -66,8 +66,8 @@ wso2:
     # -- Service Catalog integration with APIM Control Plane
     serviceCatalog:
       enabled: true
-      # CP internal service — port 9763 (offset 10 on default 9753 → 9763)
-      apimHost: "https://wso2am-cp-service.wso2-apim.svc.cluster.local:9763"
+      # Control Plane host with *.sybyl.int wildcard cert
+      apimHost: "https://am.sybyl.int"
       username: "admin"
       password: "admin"
 
@@ -165,8 +165,14 @@ wso2:
           xms: "512m"
           xmx: "1024m"
 
+    hostAliases:
+      - ip: "172.18.10.245"
+        hostnames:
+          - "am.sybyl.int"
+          - "publisher.sybyl.int"
+
     envs:
-      JAVA_OPTS: >-
+      JAVA_TOOL_OPTIONS: >-
         -Djavax.net.ssl.trustStore=/home/wso2carbon/wso2mi-4.4.0/repository/resources/security/client-truststore.jks
         -Djavax.net.ssl.trustStorePassword=wso2carbon
         -Dhttps.protocols=TLSv1.2
