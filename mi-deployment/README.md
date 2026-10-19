@@ -1,345 +1,225 @@
-# WSO2 Micro Integrator on Red Hat OpenShift Service on AWS (ROSA)
+# WSO2 Micro Integrator 4.4.0 — High Availability Production Deployment
 
-Deployment guide for running WSO2 MI 4.x.x on ROSA using a custom Docker image and Helm, with EFS-backed CarbonApp volume mounts for production API deployments.
-
----
-
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Deployment Strategy: Baked Image vs Volume Mount](#deployment-strategy-baked-image-vs-volume-mount)
-- [Step 1 — Provision EFS Storage & PVC](#step-2--provision-efs-storage--pvc)
-- [Step 2 — Create the Keystores Secret](#step-3--create-the-keystores-secret)
-- [Step 3 — Configure values.yaml](#step-4--configure-valuesyaml)
-- [Step 4 — Deploy with Helm](#step-5--deploy-with-helm)
-- [Step 5 — Verify the Deployment](#step-6--verify-the-deployment)
-- [Troubleshooting](#troubleshooting)
-- [Dev Setup: CarbonApp baked in Image](#dev-setup-carbonapp-baked-in-image)
+Production-grade deployment of **WSO2 Micro Integrator (MI) 4.4.0** on Kubernetes / OpenShift, featuring High Availability across worker nodes, dynamic Nimble-backed NFS storage, and ingress via Envoy Gateway with internal wildcard TLS certificates.
 
 ---
 
 ## Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                  ROSA Cluster                            │
-│                                                          │
-│  ┌──────────────┐     ┌──────────────────────────────┐   │
-│  │  nginx       │────▶│  WSO2 MI Pod                 │   │
-│  │  Ingress     │     │                              │   │
-│  └──────────────┘     │  ┌─────────┐  ┌──────────┐   │   │
-│                       │  │ Custom  │  │ EFS PVC  │   │   │
-│                       │  │ Image   │  │ carbonapps│  │   │
-│                       │  │ (baked  │  │ (prod)   │   │   │
-│                       │  │ .car)   │  └──────────┘   │   │
-│                       │  └─────────┘                 │   │
-│                       └──────────────────────────────┘   │
-│                                 │                        │
-│                       ┌─────────▼────────┐               │
-│                       │  mi-keystores    │               │
-│                       │  Secret (JKS)    │               │
-│                       └──────────────────┘               │
-└──────────────────────────────────────────────────────────┘
-                              │
-                    ┌─────────▼────────┐
-                    │   AWS EFS        │
-                    │  fs-xxxxxxxx     │
-                    └──────────────────┘
+```text
+                           Sybyl Enterprise Network
+                                       │
+                      [DNS: mi.sybyl.int (Internal CA)]
+                                       │
+                                       ▼
+                       MetalLB LoadBalancer VIP: 172.18.10.246
+                                       │
+                         Envoy Gateway (Gateway API v1)
+                           Port 443 (HTTPS) - *.sybyl.int
+                                       │
+                   ┌───────────────────┴───────────────────┐
+                   │                                       │
+    PathPrefix: /management                 PathPrefix: / (Services)
+                   ▼                                       ▼
+         Port 9201 (HTTP)                        Port 8290 (HTTP)
+                   │                                       │
+                   └───────────────────┬───────────────────┘
+                                       │
+        ┌──────────────────────────────┴──────────────────────────────┐
+        ▼                                                             ▼
+WSO2 MI Pod 1 (idpk8swkr1)                                    WSO2 MI Pod 2 (idpk8swkr2)
+Namespace: wso2-mi                                            Namespace: wso2-mi
+Active-Active Replica                                         Active-Active Replica
+        │                                                             │
+        ├──────────────────────────────┬──────────────────────────────┤
+        ▼                                                             ▼
+┌───────────────────────────────┐             ┌───────────────────────────────┐
+│     mi-carbonapps-pvc         │             │          mi-libs-pvc          │
+│   (2 Gi, ReadWriteMany)       │             │     (1 Gi, ReadWriteMany)     │
+│       StorageClass: nfs-csi   │             │         StorageClass: nfs-csi │
+│  Nimble Storage Provisioner   │             │   Nimble Storage Provisioner  │
+│  Mount: .../server/carbonapps │             │   Mount: .../lib              │
+└───────────────────────────────┘             └───────────────────────────────┘
 ```
 
 ---
 
-## Project Structure
+## Key Highlights
 
-```
+1. **Dedicated Namespace (`wso2-mi`)**:
+   - Completely isolated from API Manager (`wso2-apim`) to prevent service name or secret conflicts.
+2. **Active-Active High Availability (HA)**:
+   - 2 replicas scheduled across different physical worker nodes (`idpk8swkr1` and `idpk8swkr2`).
+   - `PodDisruptionBudget` (`minAvailable: 1`) guarantees availability during node drains or rolling upgrades.
+   - Zero-downtime rolling update strategy (`maxSurge: 1, maxUnavailable: 0`).
+3. **Storage Best Practices (Nimble NFS via `nfs-csi`)**:
+   - **`mi-carbonapps-pvc` (2 Gi, RWX)**: Shared directory for Carbon Applications (`.car` files). Any `.car` file dropped here is automatically hot-deployed across both replicas simultaneously.
+   - **`mi-libs-pvc` (1 Gi, RWX)**: Shared directory for JDBC drivers (PostgreSQL, MySQL, Oracle, MSSQL) and custom connectors. Dropped JARs are picked up upon pod restart without needing Docker image rebuilds.
+4. **Lean Container Strategy**:
+   - Uses the official public Docker image `wso2/wso2mi:4.4.0` from DockerHub. No paid WSO2 subscription login required.
+5. **Gateway API & TLS Termination**:
+   - Terminated at Envoy Gateway on port 443 with the internal enterprise wildcard certificate (`*.sybyl.int`).
+   - Traffic to the Management API (`/management`) routes cleanly to port `9201`.
+   - Pass-through integration services traffic routes to port `8290`.
+
+---
+
+## Directory Structure
+
+```text
 mi-deployment/
-├── agency-intg/                  # Integration project source
-│   ├── carbonapps/               # Compiled .car files (baked into image)
-│   ├── conf/                     # deployment.toml, log4j2, file.properties
-│   ├── libs/                     # Custom JARs
-│   └── Dockerfile                # Custom MI image definition
-│
+├── README.md                          # This deployment guide
 └── helm-mi/
-    └── mi/                       # Helm chart for WSO2 MI
-       ├── carbonapps/           # HelloWorld_1.0.0.car (dev/test)
-       ├── confs/                # deployment.toml, log4j2.properties
-       ├── security/             # wso2carbon.jks, client-truststore.jks
-       ├── templates/            # Kubernetes manifest templates
-       ├── mi-pvcs.yaml          # Manual PVC definition
-       ├── mi-init-pod.yaml      # Init pod for EFS seeding
-       └── values.yaml           # Main configuration file
-
-
+    ├── deploy-mi.sh                   # Automated deployment & lifecycle script
+    ├── mi-gateway-resources.yaml       # Gateway API Gateway and NFS PVC definitions
+    ├── README.md                      # Chart reference notes
+    └── mi/                            # WSO2 MI Helm Chart
+        ├── Chart.yaml                 # Helm chart metadata
+        ├── values.yaml                # Production configuration values
+        ├── confs/
+        │   └── deployment.toml        # Templated WSO2 MI configuration
+        ├── security/
+        │   ├── wso2carbon.jks         # Primary Java Keystore
+        │   └── client-truststore.jks  # Truststore with CA certs
+        ├── carbonapps/
+        │   └── HelloWorld_1.0.0.car   # Sample verification Carbon Application
+        └── templates/
+            ├── mi-deployment.yaml     # Kubernetes Deployment with PDB & NFS mounts
+            ├── mi-service.yaml        # ClusterIP Service (8290, 8253, 9164, 9201)
+            ├── mi-gateway-httproute.yaml # Gateway API HTTPRoute for mi.sybyl.int
+            ├── mi-conf.yaml           # deployment.toml ConfigMap
+            ├── mi-conf-entrypoint.yaml# Startup entrypoint ConfigMap
+            ├── mi-pdb.yaml            # PodDisruptionBudget
+            └── _helpers.tpl           # Template helper macros
 ```
 
 ---
 
 ## Prerequisites
 
-- ROSA cluster provisioned and `oc` CLI authenticated
-- `helm` v3.x installed
-- `docker` or `podman` for image builds
-- AWS EFS filesystem created in the same VPC as the ROSA cluster
-- EFS CSI driver addon enabled on the cluster (`efs-sc` StorageClass present)
-- Docker Hub or private registry credentials
-
-Verify your StorageClasses include `efs-sc`:
-
-```bash
-oc get storageclass
-# Expected: efs-sc with provisioner efs.csi.aws.com
-```
+- Kubernetes cluster (`v1.26+`) with Gateway API CRDs (`gateway.networking.k8s.io/v1`).
+- Envoy Gateway controller running in `envoy-gateway-system`.
+- MetalLB configured with available IP pool (e.g. `172.18.10.245 - 254`).
+- StorageClass `nfs-csi` backed by Nimble storage.
+- Wildcard TLS certificates in `~/intlabcrt/`:
+  - `sybyl-int-wildcard-1yr.crt`
+  - `sybyl-int-wildcard-1yr.key`
+  - `sybyl_int_root_ca.crt`
 
 ---
 
-## Deployment Strategy: Baked Image vs Volume Mount
+## Deployment Instructions
 
-This repo supports two deployment patterns:
+### 1. Execute the Deployment Script
 
-| | Dev / CI | Production |
-|---|---|---|
-| **CarbonApps** | Baked into Docker image | Mounted from EFS PVC |
-| **Image rebuild needed?** | Yes, on every API change | No — copy `.car` to EFS |
-| **Rollout speed** | Slower (image pull) | Faster (no repull) |
-| **`mountCapps` in values.yaml** | `true` (uses PVC) or `false` | `true` |
-
-For this deployment, the `.car` file is stored in AWS EFS and mounted onto the container. See - [Dev Setup: CarbonApp baked in Image](#dev-setup-carbonapp-baked-in-image) if you are not using volume mounts.
-
----
-
-## Step 1 — Provision EFS Storage & PVC
-
-The EFS filesystem and access point must exist before deploying. The PVC is created manually (not via Helm) to avoid lifecycle coupling to the Helm release.
-
-### 1a. Verify the EFS StorageClass
+Run the automated deployment script from the `helm-mi` directory:
 
 ```bash
-oc get storageclass efs-sc
+cd mi-deployment/helm-mi
+./deploy-mi.sh
 ```
 
-### 1b. Create the PVC manually
+The script automatically performs:
+1. Creates namespace `wso2-mi` (if not present).
+2. Generates the wildcard TLS secret `wso2-mi-wildcard-tls` for `*.sybyl.int`.
+3. Creates the keystore secret `mi-keystores` containing `wso2carbon.jks` and `client-truststore.jks`.
+4. Applies `mi-gateway-resources.yaml` to provision the Envoy Gateway and the two NFS PVCs (`mi-carbonapps-pvc` and `mi-libs-pvc`).
+5. Executes `helm upgrade --install mi ./mi --namespace wso2-mi --wait --timeout 5m`.
 
-Edit `helm-mi/mi/mi-pvcs.yaml` with your EFS filesystem ID and access point, then apply:
+### 2. Verify Resources
 
 ```bash
-oc apply -f helm-mi/mi/mi-pvcs.yaml -n <your-namespace>
+# Check Pods (Both should be 1/1 Running across wkr1 and wkr2)
+kubectl get pods -n wso2-mi -o wide
 
-# Confirm it is Bound before proceeding
-oc get pvc mi-carbonapps-pvc -n <your-namespace>
-```
+# Check Gateway and HTTPRoute
+kubectl get gateway,httproute -n wso2-mi
 
-### 1c. Seed the EFS volume with CarbonApps (first time)
-
-Use the init pod to copy `.car` files onto the EFS mount:
-
-```bash
-oc apply -f helm-mi/mi/mi-init-pod.yaml -n <your-namespace>
-
-# Copy your .car file into the pod
-oc cp helm-mi/mi/carbonapps/HelloWorld_1.0.0.car \
-  <init-pod-name>:/carbonapps/ -n <your-namespace>
-
-# Clean up
-oc delete -f helm-mi/mi/mi-init-pod.yaml -n <your-namespace>
-```
-
-### EFS Networking Checklist
-
-If you encounter mount errors, verify:
-
-- EFS has a **mount target in the same AZ** as your worker nodes
-- The EFS mount target security group allows **inbound TCP port 2049** from the node security group
-- Node IAM role has the following EFS permissions:
-
-```json
-{
-  "Effect": "Allow",
-  "Action": [
-    "elasticfilesystem:ClientMount",
-    "elasticfilesystem:ClientWrite",
-    "elasticfilesystem:DescribeMountTargets"
-  ],
-  "Resource": "*"
-}
-```
-
----
-
-## Step 2 — Create the Keystores Secret
-
-The Helm chart mounts `wso2carbon.jks` and `client-truststore.jks` into the pod via a Kubernetes Secret. The secret key names must match exactly.
-
-```bash
-oc create secret generic mi-keystores \
-  -n <your-namespace> \
-  --from-file=wso2carbon.jks=helm-mi/mi/security/wso2carbon.jks \
-  --from-file=client-truststore.jks=helm-mi/mi/security/client-truststore.jks
-```
-
-Verify the key names are correct:
-
-```bash
-oc describe secret mi-keystores -n <your-namespace>
+# Check Shared PVCs
+kubectl get pvc -n wso2-mi
 ```
 
 Expected output:
+```text
+NAME                         READY   STATUS    RESTARTS   AGE   IP               NODE
+wso2mi-mi-6c744568f6-nvssf   1/1     Running   0          1h    10.244.130.50    idpk8swkr1
+wso2mi-mi-6c744568f6-x42rw   1/1     Running   0          1h    10.244.187.250   idpk8swkr2
 
-```
-Data
-====
-client-truststore.jks:  <size> bytes
-wso2carbon.jks:         <size> bytes
-```
+NAME                                                CLASS           ADDRESS         PROGRAMMED
+gateway.gateway.networking.k8s.io/wso2-mi-gateway   envoy-gateway   172.18.10.246   True
 
-> **Important:** A common pitfall is creating the secret with a key named `keystore.jks` instead of `wso2carbon.jks`. The Helm chart uses `subPath` mounts and the key name must match the target filename exactly, otherwise the container will fail with `not a directory` on startup.
-
----
-
-## Step 3 — Configure values.yaml
-
-Key fields to set in `helm-mi/mi/values.yaml`:
-
-```yaml
-provider: "aws"
-
-aws:
-  storage:
-    storageClass: "efs-sc"
-    # Leave fileSystemId and cAppAccessPoint empty if PVC was created manually
-    fileSystemId: ""
-    cAppAccessPoint: ""
-
-wso2:
-  deployment:
-    hostname: "mi.apps.<your-cluster-domain>"
-    JKSSecretName: "mi-keystores"   # Must match the secret name created in Step 3
-    mountCapps: true
-    cappsPvcName: "mi-carbonapps-pvc"  # Must match the PVC name created in Step 2
-
-    image:
-      repository: "<your-registry>/wso2mi-openshift"
-      digest: "sha256:<digest>"
-      tag: "<tag>"
+NAME                                                         HOSTNAMES
+httproute.gateway.networking.k8s.io/wso2mi-mi-mi-httproute   ["mi.sybyl.int"]
 ```
 
 ---
 
-## Step 5 — Deploy with Helm
+## Client Access & Testing
+
+### 1. Update Workstation `/etc/hosts`
+
+Add the MetalLB IP (`172.18.10.246`) to your local `/etc/hosts` file:
+
+```text
+172.18.10.246   mi.sybyl.int
+```
+
+### 2. Test Management API
+
+Log in and obtain a JWT access token:
 
 ```bash
-cd helm-mi/mi/
+curl -k -s -u admin:admin --resolve "mi.sybyl.int:443:172.18.10.246" \
+  https://mi.sybyl.int/management/login
+```
 
-# Dry run first to catch template errors
-helm template mi . -f values.yaml | oc apply --dry-run=client -f -
+Query deployed APIs using the token:
 
-# Deploy
-helm upgrade --install mi . \
-  -f values.yaml \
-  -n <your-namespace> \
-  --create-namespace
+```bash
+TOKEN=$(curl -k -s -u admin:admin --resolve "mi.sybyl.int:443:172.18.10.246" \
+  https://mi.sybyl.int/management/login | python3 -c "import sys, json; print(json.load(sys.stdin)['AccessToken'])")
+
+curl -k -H "Authorization: Bearer $TOKEN" --resolve "mi.sybyl.int:443:172.18.10.246" \
+  https://mi.sybyl.int/management/apis
 ```
 
 ---
 
-## Step 6 — Verify the Deployment
+## Deploying Artifacts & Drivers
+
+### Deploying Carbon Applications (`.car` files)
+
+Copy your compiled `.car` file into the shared carbonapps volume on any running pod:
 
 ```bash
-# Check pod is Running
-oc get pods -n <your-namespace>
+POD_NAME=$(kubectl get pods -n wso2-mi -l app.kubernetes.io/name=mi -o jsonpath='{.items[0].metadata.name}')
 
-# Check pod events if not Running
-oc describe pod -n <your-namespace> <pod-name>
+# Copy sample Hello World CAR or your custom CAR:
+kubectl cp mi-deployment/helm-mi/mi/carbonapps/HelloWorld_1.0.0.car \
+  wso2-mi/${POD_NAME}:/home/wso2carbon/wso2mi-4.4.0/repository/deployment/server/carbonapps/
+```
 
-# Tail logs
-oc logs deployment/cloud-wso2-mi-demo -n <your-namespace> --tail=100 -f
+Because the folder is backed by `mi-carbonapps-pvc` (NFS RWX), both replicas detect and hot-deploy the application immediately without restart.
 
-# Check ingress
-oc get ingress -n <your-namespace>
+### Adding Database JDBC Drivers & Connectors
 
-# Test the Hello World API (use curl.exe on Windows PowerShell)
-curl.exe -k https://mi.apps.<your-cluster-domain>/hello-world
+To add a JDBC driver (e.g. PostgreSQL or Oracle driver):
+
+```bash
+kubectl cp postgresql-42.7.3.jar \
+  wso2-mi/${POD_NAME}:/home/wso2carbon/wso2mi-4.4.0/lib/
+
+# Trigger rolling restart to load the new library:
+kubectl rollout restart deployment wso2mi-mi -n wso2-mi
 ```
 
 ---
 
-## Troubleshooting
+## Uninstalling
 
-### PVC not found on scheduling
-
-The scheduler emits `persistentvolumeclaim "mi-carbonapps-pvc" not found` if the PVC does not exist before the Helm release is deployed. Always apply `mi-pvcs.yaml` and confirm `Bound` status before running `helm upgrade --install`.
+To uninstall the MI release and clean up gateway resources:
 
 ```bash
-oc get pvc mi-carbonapps-pvc -n <your-namespace>
-# STATUS must be: Bound
-```
-
-### EFS mount fails: `unrecognized init system "aws-efs-csi-dri"`
-
-This indicates an outdated EFS CSI driver. Upgrade it via the ROSA addon or Helm:
-
-```bash
-oc get daemonset efs-csi-node -n kube-system \
-  -o jsonpath='{.spec.template.spec.containers[0].image}'
-
-helm upgrade aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver \
-  --namespace kube-system
-```
-
-### Container fails with `not a directory`
-
-The `mi-keystores` secret was created with incorrect key names. Delete and recreate it ensuring the keys are named `wso2carbon.jks` and `client-truststore.jks`:
-
-```bash
-oc delete secret mi-keystores -n <your-namespace>
-
-oc create secret generic mi-keystores \
-  -n <your-namespace> \
-  --from-file=wso2carbon.jks=./security/wso2carbon.jks \
-  --from-file=client-truststore.jks=./security/client-truststore.jks
-```
-
-### 503 from Ingress
-
-The Ingress `ADDRESS` field being empty means the nginx ingress controller is not running or is in a different namespace. Check:
-
-```bash
-oc get pods -A | grep ingress
-oc get svc -n <your-namespace>
-```
-
----
-
-## Dev Setup: CarbonApp baked in Image
-
-In a test environment, you can bake the `.car` file into the Docker image. But this means every API deployment requires rebuilding and re-pulling the image.
-For production, use EFS volume mounts so new CarbonApps can be deployed without touching the image.
-
-## How it works
-
-### Build & Push the Custom Docker Image
-
-The `agency-intg/Dockerfile` bakes the CarbonApp and custom JARs directly into the WSO2 MI base image.
-
-```bash
-cd agency-intg/
-
-# Build the image
-docker build -t <your-registry>/wso2mi-openshift:<tag> .
-
-# Push to registry
-docker push <your-registry>/wso2mi-openshift:<tag>
-
-# Get the digest for pinning in values.yaml (recommended over tags)
-docker inspect --format='{{index .RepoDigests 0}}' <your-registry>/wso2mi-openshift:<tag>
-```
-
-Update `helm-mi/mi/values.yaml` with the digest:
-
-```yaml
-image:
-  repository: "<your-registry>/wso2mi-openshift"
-  digest: "sha256:<digest-here>"
-  tag: "<tag>"
+cd mi-deployment/helm-mi
+./deploy-mi.sh --uninstall
 ```

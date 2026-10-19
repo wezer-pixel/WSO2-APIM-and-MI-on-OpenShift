@@ -74,6 +74,8 @@ NFS CSI Shared Volume           Traffic Manager (TM)
 | **WebSocket Gateway** | `wss://websocket.sybyl.int` | Envoy HTTPRoute | Gateway (Port 9099) |
 | **WebSub Gateway** | `https://websub.sybyl.int` | Envoy HTTPRoute | Gateway (Port 9021) |
 | **Traffic Manager** | `tm.sybyl.int` (Internal cluster) | ClusterIP Service | Traffic Manager (Port 9763) |
+| **Micro Integrator (Services)** | `https://mi.sybyl.int/services/` | Envoy HTTPRoute (VIP: `172.18.10.246`) | Micro Integrator (Port 8290) |
+| **Micro Integrator (Management)**| `https://mi.sybyl.int/management` | Envoy HTTPRoute (VIP: `172.18.10.246`) | Micro Integrator (Port 9201) |
 
 ---
 
@@ -101,7 +103,15 @@ NFS CSI Shared Volume           Traffic Manager (TM)
 │               ├── confs/                                    # deployment.toml per instance
 │               ├── templates/                                # Instance 1 & 2 Deployments, PDB
 │               └── values.yaml                               # TM Values
-└── mi-deployment/                                            # WSO2 Micro Integrator 4.4.0 charts
+└── mi-deployment/
+    ├── README.md                                             # Detailed WSO2 MI HA architecture & guide
+    └── helm-mi/
+        ├── deploy-mi.sh                                      # Automated MI bootstrap & deploy script
+        ├── mi-gateway-resources.yaml                         # Gateway & Nimble NFS PVCs
+        └── mi/                                               # WSO2 MI 4.4.0 Helm Chart
+            ├── values.yaml                                   # Production values
+            ├── confs/deployment.toml                         # MI configuration
+            └── templates/                                    # Deployment, Service, HTTPRoute, PDB
 ```
 
 ---
@@ -169,7 +179,7 @@ helm upgrade --install wso2am-tm \
   -n wso2-apim
 ```
 
-### Step 4: Verification
+### Step 4: Verify APIM Deployment
 
 ```bash
 # Verify all 6 pods are Running (1/1 Ready)
@@ -179,28 +189,39 @@ kubectl get pods -n wso2-apim -o wide
 kubectl get httproutes -n wso2-apim
 ```
 
-Expected output:
-```text
-NAME                                      READY   STATUS    RESTARTS   AGE
-wso2am-cp-deployment-1-bbc658b4b-gphgx    1/1     Running   0          50m
-wso2am-cp-deployment-2-5497946b44-jbwgq   1/1     Running   0          46m
-wso2am-gw-deployment-5c8667c48b-6tbhl     1/1     Running   0          29m
-wso2am-gw-deployment-5c8667c48b-pkkgr     1/1     Running   0          28m
-wso2am-tm-deployment-1-69fc589867-6x2dr   1/1     Running   0          17m
-wso2am-tm-deployment-2-6c7d778d77-v6zp4   1/1     Running   0          17m
+### Step 5: Deploy WSO2 Micro Integrator (MI)
+
+Micro Integrator is deployed in its own namespace (`wso2-mi`) using dynamic Nimble NFS storage:
+
+```bash
+cd mi-deployment/helm-mi
+./deploy-mi.sh
+
+# Verify MI pods (2/2 Running across wkr1 and wkr2)
+kubectl get pods -n wso2-mi -o wide
 ```
+
+See [mi-deployment/README.md](mi-deployment/README.md) for full MI architecture and CarbonApp deployment instructions.
 
 ---
 
 ## 7. Client Access & Testing
 
-Add the worker node IP (`172.18.10.74` or `172.18.10.40`) to `/etc/hosts` or local DNS:
+Add the MetalLB LoadBalancer VIPs to your workstation `/etc/hosts` or local DNS:
+
 ```text
-172.18.10.74  publisher.sybyl.int devportal.sybyl.int admin.sybyl.int gw.sybyl.int websocket.sybyl.int websub.sybyl.int
+# WSO2 API Manager 4.7.0 (VIP: 172.18.10.245)
+172.18.10.245   am.sybyl.int publisher.sybyl.int devportal.sybyl.int admin.sybyl.int gw.sybyl.int websocket.sybyl.int websub.sybyl.int
+
+# WSO2 Micro Integrator 4.4.0 (VIP: 172.18.10.246)
+172.18.10.246   mi.sybyl.int
 ```
 
 Open in any browser with the Sybyl Root CA installed:
-- **Publisher**: `https://publisher.sybyl.int/publisher`
+- **Publisher Portal**: `https://publisher.sybyl.int/publisher`
 - **Developer Portal**: `https://devportal.sybyl.int/devportal`
-- **Admin**: `https://admin.sybyl.int/admin`
+- **Admin Portal**: `https://admin.sybyl.int/admin`
+- **API Runtime Gateway**: `https://gw.sybyl.int`
+- **Micro Integrator Services**: `https://mi.sybyl.int/services/`
+- **Micro Integrator Management**: `https://mi.sybyl.int/management`
 - Default Credentials: `admin` / `admin` (update upon first login)
